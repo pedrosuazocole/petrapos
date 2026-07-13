@@ -1,0 +1,12 @@
+node_modules
+.env
+*.db
+*.log
+.git
+.gitignore
+INICIAR.bat
+LEEME.txt
+*.md
+.DS_Store
+Thumbs.db
+data/

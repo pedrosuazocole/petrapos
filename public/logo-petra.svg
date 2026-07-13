@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 48" width="180" height="48">
+  <defs>
+    <linearGradient id="stoneGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7C3AED;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4F46E5;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#A78BFA;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#818CF8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Hexágono/Piedra geométrica -->
+  <g transform="translate(4,4)">
+    <!-- Sombra/profundidad -->
+    <polygon points="20,0 40,8 40,32 20,40 0,32 0,8" fill="#312E81" opacity="0.5" transform="translate(2,3)"/>
+    <!-- Cara principal del hexágono (piedra) -->
+    <polygon points="20,0 40,8 40,32 20,40 0,32 0,8" fill="url(#stoneGrad)"/>
+    <!-- Faceta superior izquierda -->
+    <polygon points="20,0 0,8 20,16" fill="url(#accentGrad)" opacity="0.6"/>
+    <!-- Faceta superior derecha -->
+    <polygon points="20,0 40,8 20,16" fill="#6D28D9" opacity="0.4"/>
+    <!-- Brillo superior -->
+    <polygon points="20,2 37,9 20,14 3,9" fill="white" opacity="0.12"/>
+    <!-- P central -->
+    <text x="20" y="27" text-anchor="middle" font-family="Arial Black, Arial" font-weight="900" font-size="18" fill="white" letter-spacing="-1">P</text>
+  </g>
+  <!-- Nombre PETRA -->
+  <text x="54" y="22" font-family="Arial, sans-serif" font-weight="900" font-size="16" fill="white" letter-spacing="2">PETRA</text>
+  <!-- POS subtitle -->
+  <text x="54" y="37" font-family="Arial, sans-serif" font-weight="400" font-size="10" fill="#A78BFA" letter-spacing="4">POS</text>
+  <!-- Línea decorativa -->
+  <rect x="54" y="25" width="70" height="1.5" fill="#7C3AED" opacity="0.5" rx="1"/>
+</svg>

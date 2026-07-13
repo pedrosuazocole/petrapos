@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="PetraPOS">
+  <meta name="theme-color" content="#4F46E5">
+  <meta name="description" content="Petra POS — Sistema de Punto de Venta Honduras">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+  <title>Petra POS v1.0</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1E1B4B 0%,#312E81 50%,#4F46E5 100%);padding:20px;position:relative;overflow:hidden}
+    #login-screen::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;background:rgba(124,58,237,.15);top:-200px;right:-200px;pointer-events:none}
+    #login-screen::after{content:'';position:absolute;width:400px;height:400px;border-radius:50%;background:rgba(99,102,241,.1);bottom:-100px;left:-100px;pointer-events:none}
+    .login-card{background:#fff;border-radius:20px;padding:40px 36px;width:100%;max-width:420px;box-shadow:0 24px 64px rgba(30,27,75,.4);position:relative;z-index:1}
+    .login-logo-wrap{text-align:center;margin-bottom:24px}
+    .login-logo-wrap img{max-width:160px;max-height:60px;object-fit:contain}
+    .login-title{font-size:20px;font-weight:800;color:#1E1B4B;text-align:center;margin-bottom:4px;font-family:'DM Sans',sans-serif}
+    .login-sub{font-size:12px;color:#94a3b8;text-align:center;margin-bottom:28px;letter-spacing:1px;text-transform:uppercase}
+    .login-field{margin-bottom:16px}
+    .login-field label{display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+    .login-field input,.login-field select{width:100%;border:1.5px solid #E0E7FF;border-radius:10px;padding:10px 14px;font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s;font-family:inherit;box-sizing:border-box;color:#1E1B4B}
+    .login-field input:focus,.login-field select:focus{border-color:#4F46E5;box-shadow:0 0 0 3px rgba(99,102,241,.15)}
+    .login-btn{width:100%;padding:13px;background:linear-gradient(135deg,#7C3AED,#4F46E5);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px;box-shadow:0 4px 16px rgba(124,58,237,.35);transition:transform .15s,box-shadow .15s}
+    .login-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(124,58,237,.45)}
+    .login-error{color:#dc2626;font-size:12px;text-align:center;margin-top:8px;min-height:18px}
+    #topbar{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:52px;background:#fff;border-bottom:1px solid #e2e8f0;flex-shrink:0;gap:12px}
+    .topbar-branch{font-size:12px;font-weight:600;color:#64748b;background:#f1f5f9;padding:4px 10px;border-radius:6px}
+    .topbar-role{font-size:11px;background:#eff6ff;color:#2563eb;padding:2px 8px;border-radius:10px;font-weight:600;text-transform:capitalize}
+    .btn-logout{font-size:12px;color:#94a3b8;background:none;border:1px solid #e2e8f0;border-radius:6px;padding:4px 10px;cursor:pointer;font-family:inherit}
+    .btn-logout:hover{color:#dc2626;border-color:#dc2626}
+    .badge-red{background:#fef2f2;color:#dc2626}
+    .badge-green{background:#f0fdf4;color:#16a34a}
+    .badge-blue{background:#eff6ff;color:#2563eb}
+    .badge-amber{background:#fffbeb;color:#d97706}
+    .badge-gray{background:#f1f5f9;color:#64748b}
+    .report-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:16px}
+    .report-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:20px}
+    .kardex-tipo{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+    .kt-entrada,.kt-compra{background:#f0fdf4;color:#16a34a}
+    .kt-salida,.kt-venta{background:#fef2f2;color:#dc2626}
+    .kt-ajuste{background:#eff6ff;color:#2563eb}
+    .kt-devolucion{background:#fffbeb;color:#d97706}
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<!-- Banner de instalación PWA -->
+<div id="pwa-install-banner" style="display:none;position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+     background:#1e3a5f;color:#fff;border-radius:14px;padding:12px 18px;z-index:9999;
+     align-items:center;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,.3);max-width:calc(100vw - 32px)">
+  <span style="font-size:13px;font-weight:600">📲 Instalar PetraPOS en tu dispositivo</span>
+  <button onclick="installPWA()" style="background:#2563eb;border:none;border-radius:8px;color:#fff;
+    padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">Instalar</button>
+  <button onclick="this.parentElement.style.display='none'" style="background:rgba(255,255,255,.15);
+    border:none;border-radius:8px;color:#fff;padding:7px 10px;font-size:12px;cursor:pointer">✕</button>
+</div>
+<!-- LICENCIA MODAL -->
+<div id="licencia-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:16px;padding:36px;width:100%;max-width:440px;box-shadow:0 24px 64px rgba(0,0,0,0.4);margin:20px">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:40px">🔑</div>
+      <div style="font-size:20px;font-weight:800;color:#1e3a5f;margin-top:8px">Activar Licencia</div>
+      <div style="font-size:13px;color:#64748b;margin-top:4px">Ingrese su clave de licencia para continuar</div>
+    </div>
+    <div style="margin-bottom:16px">
+      <label style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Clave de Licencia</label>
+      <input id="lic-clave" type="text" placeholder="MPOS-MEN-XXXX-XXXX-XXXX" autocomplete="off"
+        style="width:100%;border:2px solid #e2e8f0;border-radius:8px;padding:11px 14px;font-size:14px;font-family:monospace;outline:none;box-sizing:border-box;text-transform:uppercase;letter-spacing:1px"
+        oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')activarLicencia()">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+      <div style="background:#f1f5f9;border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase">Mensual</div>
+        <div style="font-size:12px;color:#334155;margin-top:2px">30 días</div>
+      </div>
+      <div style="background:#f1f5f9;border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase">Trimestral</div>
+        <div style="font-size:12px;color:#334155;margin-top:2px">90 días</div>
+      </div>
+      <div style="background:#f1f5f9;border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase">Anual</div>
+        <div style="font-size:12px;color:#334155;margin-top:2px">365 días</div>
+      </div>
+      <div style="background:#f1f5f9;border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase">Vitalicia</div>
+        <div style="font-size:12px;color:#334155;margin-top:2px">De por vida</div>
+      </div>
+    </div>
+    <div id="lic-error" style="color:#dc2626;font-size:12px;text-align:center;min-height:18px;margin-bottom:10px"></div>
+    <button onclick="activarLicencia()" style="width:100%;padding:13px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">
+      ✅ Activar Sistema
+    </button>
+    <button onclick="document.getElementById('licencia-modal').style.display='none'" id="lic-cancel-btn"
+      style="width:100%;padding:10px;background:transparent;color:#64748b;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;margin-top:8px;display:none">
+      Cancelar
+    </button>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <!-- Logo Petra POS -->
+    <div class="login-logo-wrap">
+      <img src="/logo-petra.svg" alt="Petra POS">
+    </div>
+    <div class="login-title">Bienvenido a Petra POS</div>
+    <div class="login-sub">Sistema de Punto de Venta</div>
+    <!-- Badge estado licencia -->
+    <div id="lic-badge" style="display:none;text-align:center;margin-bottom:16px">
+      <span id="lic-badge-inner" style="display:inline-block;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px"></span>
+    </div>
+    <div class="login-field">
+      <label>Sucursal</label>
+      <select id="login-suc"></select>
+    </div>
+    <div class="login-field">
+      <label>Usuario</label>
+      <input type="text" id="login-user" placeholder="admin" autocomplete="username">
+    </div>
+    <div class="login-field">
+      <label>Contraseña</label>
+      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="login-btn" id="login-btn">→ INICIAR SESIÓN</button>
+    <div class="login-error" id="login-error"></div>
+    <div style="text-align:center;margin-top:14px">
+      <button onclick="abrirModalLicencia(true)" style="background:none;border:none;color:#7C3AED;font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline">🔑 Activar / Cambiar Licencia</button>
+    </div>
+  </div>
+</div><div id="login-screen">
+  <div class="login-card">
+    <div style="text-align:center;margin-bottom:24px">
+      
+    </div>
+    
+    <div class="login-sub">Version 7.3</div>
+    <!-- Badge estado licencia -->
+    <div id="lic-badge" style="display:none;text-align:center;margin-bottom:16px">
+      <span id="lic-badge-inner" style="display:inline-block;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px"></span>
+    </div>
+    <div class="login-field">
+      <label>Sucursal</label>
+      <select id="login-suc"></select>
+    </div>
+    <div class="login-field">
+      <label>Usuario</label>
+      <input type="text" id="login-user" placeholder="admin" autocomplete="username">
+    </div>
+    <div class="login-field">
+      <label>Contraseña</label>
+      <input type="password" id="login-pass" placeholder="Escriba su contrasena" autocomplete="current-password">
+    </div>
+    <button class="login-btn" id="login-btn">Ingresar al Sistema</button>
+    <div class="login-error" id="login-error"></div>
+    <div style="text-align:center;margin-top:14px">
+      <button onclick="abrirModalLicencia(true)" style="background:none;border:none;color:#2563eb;font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline">🔑 Activar / Cambiar Licencia</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none;flex-direction:column;height:100vh">
+  <div id="topbar">
+    <div style="display:flex;align-items:center;gap:10px">
+      <!-- Botón hamburger (visible solo en móvil) -->
+      <button id="btn-hamburger" aria-label="Menú" onclick="toggleSidebar()">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <rect x="2" y="5" width="18" height="2" rx="1" fill="#1e3a5f"/>
+          <rect x="2" y="10" width="18" height="2" rx="1" fill="#1e3a5f"/>
+          <rect x="2" y="15" width="18" height="2" rx="1" fill="#1e3a5f"/>
+        </svg>
+      </button>
+      
+      <span class="topbar-branch" id="top-branch">—</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <style>@keyframes turno-pulse{0%,100%{opacity:1}50%{opacity:.4}}</style>
+      <span class="topbar-role" id="top-role">—</span>
+      <span style="font-size:12px;color:#64748b" id="top-user">—</span>
+      <span style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.5px;background:#f1f5f9;padding:3px 8px;border-radius:6px;border:1px solid #e2e8f0">v7.3</span>
+      <button class="btn-logout" onclick="doLogout()">Cerrar sesión</button>
+    </div>
+  </div>
+  <div style="display:flex;flex:1;overflow:hidden">
+    <aside id="sidebar">
+      <div id="sidebar-logo"><img src="/logo-petra.svg" alt="Petra POS" style="max-width:150px;max-height:56px"></div>
+      <nav id="nav-menu"></nav>
+      <div id="sidebar-footer">
+        <div class="company-name" id="company-name-footer"></div>
+        <div class="company-rtn" id="company-rtn-footer"></div>
+      </div>
+    </aside>
+    <main id="main">
+      <!-- POS -->
+      <!-- ── VISTA: DASHBOARD ────────────────────────────────────────────── -->
+      <div id="dashboard-view" class="view">
+        <div class="page">
+          <div class="page-header">
+            <div>
+              <div class="page-title">Dashboard</div>
+              <div class="page-subtitle" id="dash-fecha-sub">Resumen del día</div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn-primary" style="background:#475569;font-size:12px;padding:6px 14px" onclick="renderDashboard()">🔄 Actualizar</button>
+            </div>
+          </div>
+
+          <!-- KPIs fila 1 -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:18px" id="dash-kpis"></div>
+
+          <!-- Cuerpo: últimas ventas + top productos -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+            <!-- Últimas ventas -->
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+              <div style="padding:12px 16px;background:#1e3a5f;color:#fff;display:flex;justify-content:space-between;align-items:center">
+                <div style="font-size:13px;font-weight:700">📋 Últimas Ventas</div>
+                <div style="font-size:11px;opacity:.8">Hoy</div>
+              </div>
+              <div id="dash-ult-ventas" style="max-height:280px;overflow-y:auto"></div>
+            </div>
+            <!-- Top productos del mes -->
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+              <div style="padding:12px 16px;background:#059669;color:#fff;display:flex;justify-content:space-between;align-items:center">
+                <div style="font-size:13px;font-weight:700">🏆 Top Productos</div>
+                <div style="font-size:11px;opacity:.8">Este mes</div>
+              </div>
+              <div id="dash-top-prods" style="max-height:280px;overflow-y:auto"></div>
+            </div>
+          </div>
+
+          <!-- Ventas últimos 7 días -->
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;margin-bottom:16px">
+            <div style="padding:12px 16px;background:#f8fafc;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center">
+              <div style="font-size:13px;font-weight:700;color:#1e3a5f">📈 Ventas últimos 7 días</div>
+            </div>
+            <div id="dash-grafico-7dias" style="padding:16px"></div>
+          </div>
+
+          <!-- Turnos del día con estado de tickets -->
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">
+            <div style="padding:12px 16px;background:#1e3a5f;color:#fff;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+              <div style="font-size:13px;font-weight:700">🕐 Turnos por Fecha</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <button onclick="_dashTurnosDia(-1)" style="background:rgba(255,255,255,.15);border:none;border-radius:6px;padding:3px 10px;color:#fff;font-size:14px;cursor:pointer">◀</button>
+                <input type="date" id="dash-turnos-fecha"
+                  style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:3px 8px;color:#fff;font-size:11px;cursor:pointer;outline:none"
+                  onchange="_dashTurnosCargar(this.value)">
+                <button onclick="_dashTurnosDia(1)" style="background:rgba(255,255,255,.15);border:none;border-radius:6px;padding:3px 10px;color:#fff;font-size:14px;cursor:pointer">▶</button>
+                <button onclick="_dashTurnosCargar()" style="background:rgba(255,255,255,.15);border:none;border-radius:6px;padding:3px 10px;color:#fff;font-size:11px;cursor:pointer">Hoy</button>
+                <button onclick="_dashTurnosCargar(document.getElementById('dash-turnos-fecha').value)" style="background:rgba(255,255,255,.15);border:none;border-radius:6px;padding:3px 8px;color:#fff;font-size:11px;cursor:pointer">🔄</button>
+              </div>
+            </div>
+            <div id="dash-turnos" style="padding:14px">
+              <div style="text-align:center;color:#94a3b8;font-size:13px;padding:20px">Cargando turnos...</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div id="facturacion-view" class="view">
+        <div style="display:flex;flex-direction:column;height:100%;overflow:hidden">
+
+          <!-- Aviso: sin turno activo (oculto por defecto, lo controla JS) -->
+          <div id="fac-sin-turno-banner" style="display:none;background:#fef2f2;border-bottom:2px solid #fca5a5;padding:10px 18px;flex-shrink:0;align-items:center;gap:10px">
+            <span style="font-size:18px">⚠️</span>
+            <span style="font-size:13px;color:#991b1b;font-weight:600">No tienes un turno abierto. Esta venta NO se incluirá en ningún corte de caja. Abre tu turno desde el módulo "Turnos" antes de facturar.</span>
+          </div>
+
+          <!-- BARRA SUPERIOR con buscador prominente -->
+          <div style="background:#fff;border-bottom:2px solid #e2e8f0;padding:12px 18px;flex-shrink:0">
+            <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+              <!-- Título -->
+              <div style="flex-shrink:0">
+                <div style="font-size:15px;font-weight:800;color:#1e3a5f;letter-spacing:-.3px">📄 Facturación</div>
+                <div style="font-size:10px;color:#94a3b8;margin-top:1px">v7.3 Servicios · Carta SAR</div>
+              </div>
+              <!-- Buscador grande -->
+              <div style="flex:1;min-width:200px;position:relative">
+                <svg style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;pointer-events:none" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                <input type="text" id="fac-search"
+                  placeholder="Buscar artículo o servicio — nombre, código o categoría..."
+                  style="width:100%;padding:9px 14px 9px 40px;border:2px solid #dbeafe;border-radius:10px;font-size:13px;outline:none;color:#1e3a5f;background:#f8faff;box-sizing:border-box;transition:all .15s"
+                  onfocus="this.style.borderColor='#2563eb';this.style.background='#fff'"
+                  onblur="this.style.borderColor='#dbeafe';this.style.background='#f8faff'">
+              </div>
+              <!-- Filtro de categoría -->
+              <select id="fac-cat-filter"
+                style="padding:9px 12px;border:2px solid #e2e8f0;border-radius:10px;font-size:12px;font-weight:600;color:#475569;outline:none;background:#fff;cursor:pointer;flex-shrink:0">
+                <option value="">Todas las categorías</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- CUERPO: panel izquierdo productos + panel derecho carrito -->
+          <div style="display:flex;flex:1;overflow:hidden;min-height:0">
+
+            <!-- IZQUIERDA: resultados -->
+            <div style="flex:1;overflow-y:auto;padding:12px 14px;background:#f8fafc;display:flex;flex-direction:column;gap:10px">
+
+              <!-- Tabla de resultados (visible al buscar) -->
+              <div id="fac-results-box" style="display:none;background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)">
+                <div style="padding:8px 14px;background:#eff6ff;border-bottom:1px solid #dbeafe;display:flex;align-items:center;gap:8px">
+                  <span style="font-size:11px;font-weight:700;color:#2563eb;text-transform:uppercase;letter-spacing:.5px">Resultados</span>
+                </div>
+                <div style="overflow-x:auto">
+                  <table style="width:100%;border-collapse:collapse;min-width:560px">
+                    <thead>
+                      <tr style="background:#f8fafc;border-bottom:1px solid #e2e8f0">
+                        <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:700;color:#64748b;white-space:nowrap">Código</th>
+                        <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:700;color:#64748b">Nombre / Servicio</th>
+                        <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:700;color:#64748b">Categoría</th>
+                        <th style="padding:8px 12px;text-align:right;font-size:11px;font-weight:700;color:#64748b;white-space:nowrap">Precio</th>
+                        <th style="padding:8px 12px;text-align:center;font-size:11px;font-weight:700;color:#64748b">ISV</th>
+                        <th style="padding:8px 12px;text-align:center;font-size:11px;font-weight:700;color:#64748b">Stock</th>
+                        <th style="padding:8px 12px;text-align:center;font-size:11px;font-weight:700;color:#64748b">Agregar</th>
+                      </tr>
+                    </thead>
+                    <tbody id="fac-results-body"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Grid de tarjetas (vista por defecto) -->
+              <div class="products-grid" id="fac-products-grid"></div>
+            </div>
+
+            <!-- DERECHA: carrito -->
+            <div class="pos-cart" style="width:300px;flex-shrink:0;display:flex;flex-direction:column;border-left:2px solid #e2e8f0;background:#fff">
+              <!-- Cliente -->
+              <div style="padding:10px 12px;border-bottom:1px solid #e2e8f0;background:#f8fafc;flex-shrink:0">
+                <!-- Selector de serie de facturación -->
+                <label style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Serie de Factura</label>
+                <select id="fac-serie-id" style="width:100%;border:1px solid #2563eb;border-radius:8px;padding:6px 10px;font-size:12px;outline:none;color:#1e3a5f;background:#eff6ff;font-weight:700;margin-bottom:10px;font-family:monospace"></select>
+                <label style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Cliente</label>
+                <select id="fac-client" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;font-size:13px;outline:none;color:#1e3a5f;background:#fff"></select>
+                <div style="font-size:10px;color:#64748b;margin-top:4px;margin-bottom:12px;font-family:monospace" id="fac-client-rtn"></div>
+              </div>
+              <!-- Items -->
+              <div class="cart-items" id="fac-cart-items" style="flex:1;overflow-y:auto;padding:6px 10px"></div>
+              <!-- Totales -->
+              <div class="cart-totals" style="border-top:2px solid #e2e8f0;padding:10px 12px;background:#f8fafc;flex-shrink:0">
+                <div class="discount-row">
+                  <input type="number" id="fac-discount" min="0" placeholder="Descuento">
+                  <select id="fac-discount-type"><option value="porcentaje">%</option><option value="fijo">L.</option></select>
+                </div>
+                <label class="exonerado-check"><input type="checkbox" id="fac-exonerado"><span>Compra Exonerada</span></label>
+                <div class="exonerado-fields" id="fac-exonerado-fields">
+                  <input type="text" id="fac-orden-compra" placeholder="N° Orden de Compra Exenta">
+                  <input type="text" id="fac-constancia" placeholder="N° Constancia Registro Exonerado">
+                  <input type="text" id="fac-sag" placeholder="Identificativo Registro SAG">
+                </div>
+                <div class="totals-rows" id="fac-totals-rows"></div>
+                <div class="success-toast" id="fac-invoice-toast" style="display:none">✅ ¡Factura generada!</div>
+                <button class="btn-invoice" id="fac-btn-invoice" disabled>🖨️ Emitir Factura en Carta</button>
+              </div>
+            </div>
+
+          </div><!-- fin cuerpo -->
+        </div>
+      </div>
+      <!-- PRODUCTOS -->
+      <div id="products-view" class="view">
+        <div class="page">
+          <!-- HEADER -->
+          <div class="page-header">
+            <div><div class="page-title">Productos</div><div class="page-subtitle" id="prod-count"></div></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn-primary" style="background:#475569" onclick="descargarPlantilla('productos')">📄 Plantilla</button>
+              <button class="btn-primary" style="background:#059669" onclick="openExcelModal()">📥 Importar Excel</button>
+              <button class="btn-primary" style="background:#0f766e" onclick="descargarProductosExcel()">📊 Descargar Productos</button>
+              <button class="btn-primary" id="btn-new-product">+ Nuevo Producto</button>
+            </div>
+          </div>
+
+          <!-- KPI CARDS -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:20px">
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px">
+              <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px">Total Productos</div>
+              <div style="font-size:26px;font-weight:800;color:#1e3a5f;margin-top:4px" id="kpi-total">—</div>
+            </div>
+            <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 18px">
+              <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px">Categorías</div>
+              <div style="font-size:26px;font-weight:800;color:#2563eb;margin-top:4px" id="kpi-cats">—</div>
+            </div>
+            <div style="background:#fff;border:1px solid #bbf7d0;border-radius:12px;padding:16px 18px;background:#f0fdf4">
+              <div style="font-size:10px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.5px">Con Stock</div>
+              <div style="font-size:26px;font-weight:800;color:#16a34a;margin-top:4px" id="kpi-con-stock">—</div>
+            </div>
+            <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:16px 18px">
+              <div style="font-size:10px;font-weight:700;color:#dc2626;text-transform:uppercase;letter-spacing:.5px">Stock Bajo / Agotado</div>
+              <div style="font-size:26px;font-weight:800;color:#dc2626;margin-top:4px" id="kpi-bajo-stock">—</div>
+            </div>
+            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:16px 18px">
+              <div style="font-size:10px;font-weight:700;color:#d97706;text-transform:uppercase;letter-spacing:.5px">Valor Inventario</div>
+              <div style="font-size:18px;font-weight:800;color:#d97706;margin-top:4px" id="kpi-valor">—</div>
+            </div>
+            <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:12px;padding:16px 18px">
+              <div style="font-size:10px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.5px">Precio Promedio</div>
+              <div style="font-size:18px;font-weight:800;color:#7c3aed;margin-top:4px" id="kpi-avg-precio">—</div>
+            </div>
+          </div>
+
+          <!-- FILTROS + BÚSQUEDA -->
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+            <div class="page-search search-box" style="flex:1;min-width:200px;margin-bottom:0">
+              <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+              <input type="text" id="prod-search" placeholder="Buscar por nombre, código...">
+            </div>
+            <select id="prod-filter-cat" style="border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:13px;outline:none;background:#fff;min-width:160px">
+              <option value="">Todas las categorías</option>
+            </select>
+            <select id="prod-filter-stock" style="border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:13px;outline:none;background:#fff">
+              <option value="">Todo el stock</option>
+              <option value="ok">Con stock</option>
+              <option value="bajo">Stock bajo</option>
+              <option value="agotado">Agotados</option>
+            </select>
+            <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:8px;padding:3px">
+              <button id="prod-view-table" onclick="setProdView('table')" title="Vista tabla"
+                style="border:none;background:#fff;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:14px;box-shadow:0 1px 3px rgba(0,0,0,.1)">☰</button>
+              <button id="prod-view-grid" onclick="setProdView('grid')" title="Vista tarjetas"
+                style="border:none;background:none;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:14px">⊞</button>
+            </div>
+          </div>
+
+          <!-- TABLA (default) -->
+          <div id="prod-table-container" class="data-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Código</th>
+                  <th>Nombre</th>
+                  <th>Categoría</th>
+                  <th style="text-align:right">Precio Venta</th>
+                  <th style="text-align:right">Costo</th>
+                  <th style="text-align:right">Margen</th>
+                  <th style="text-align:center">ISV</th>
+                  <th style="text-align:right">Stock</th>
+                  <th style="text-align:right">Stock Mín.</th>
+                  <th style="text-align:center">Estado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="products-table-body"></tbody>
+            </table>
+          </div>
+
+          <!-- GRID (oculto por defecto) -->
+          <div id="prod-grid-container" style="display:none;display:none">
+            <div id="prod-card-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px"></div>
+          </div>
+
+          <!-- SIN RESULTADOS -->
+          <div id="prod-empty" style="display:none;text-align:center;padding:48px 20px;color:#94a3b8">
+            <div style="font-size:40px;margin-bottom:12px">📦</div>
+            <div style="font-size:15px;font-weight:600">Sin resultados</div>
+            <div style="font-size:13px;margin-top:6px">Prueba con otro filtro o búsqueda</div>
+          </div>
+        </div>
+      </div>
+      <!-- CLIENTES -->
+      <div id="clients-view" class="view">
+        <div class="page">
+          <div class="page-header"><div><div class="page-title">Clientes</div><div class="page-subtitle" id="client-count"></div></div><div style="display:flex;gap:8px"><button class="btn-primary" style="background:#475569" onclick="descargarPlantilla('clientes')">📄 Plantilla</button><button class="btn-primary" style="background:#059669" onclick="abrirImportarClientes()">📥 Importar Excel</button><button class="btn-primary" id="btn-new-client">+ Nuevo Cliente</button></div></div>
+          <div class="cards-grid" id="clients-cards"></div>
+        </div>
+      </div>
+      <!-- PROVEEDORES -->
+      <div id="suppliers-view" class="view">
+        <div class="page">
+          <div class="page-header"><div><div class="page-title">Proveedores</div><div class="page-subtitle" id="supplier-count"></div></div><div style="display:flex;gap:8px"><button class="btn-primary" style="background:#475569" onclick="descargarPlantilla('proveedores')">📄 Plantilla</button><button class="btn-primary" style="background:#059669" onclick="abrirImportarProveedores()">📥 Importar Excel</button><button class="btn-primary" id="btn-new-supplier">+ Nuevo Proveedor</button></div></div>
+          <div class="data-table"><table><thead><tr><th>Nombre</th><th>RTN</th><th>Contacto</th><th>Teléfono</th><th style="text-align:right">Saldo</th><th></th></tr></thead><tbody id="suppliers-table-body"></tbody></table></div>
+        </div>
+      </div>
+      <!-- VENTAS -->
+      <div id="sales-view" class="view">
+        <div class="page">
+          <div class="page-header"><div><div class="page-title">Ventas</div><div class="page-subtitle" id="sales-count"></div></div></div>
+          <div id="sales-list"></div>
+        </div>
+      </div>
+      <!-- INVENTARIO -->
+      <div id="inventory-view" class="view">
+        <div class="page">
+          <div class="page-header">
+            <div><div class="page-title">Inventario</div><div class="page-subtitle" id="inv-low-count"></div></div>
+            <div style="display:flex;gap:10px;align-items:center">
+              <button class="btn-primary" style="background:#475569" onclick="descargarPlantilla('inventario')">📄 Plantilla</button>
+              <button class="btn-primary" style="background:#059669" onclick="abrirImportarInventario()">📥 Importar Excel</button>
+              <button class="btn-primary" style="background:#0f766e" onclick="descargarInventarioExcel()">📊 Descargar Inventario</button>
+              <div style="background:#eff6ff;border-radius:10px;padding:8px 16px"><div style="font-size:10px;color:#64748b;font-weight:700">VALOR TOTAL</div><div style="font-size:15px;font-weight:700;color:#1d4ed8" id="inv-total-value">L. 0.00</div></div>
+              <button class="btn-primary" onclick="reporteInventario()">🖨️ Inventario Físico</button>
+            </div>
+          </div>
+          <div class="page-search search-box"><svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg><input type="text" id="inv-search" placeholder="Buscar..."></div>
+          <div class="data-table"><table><thead><tr><th>Código</th><th>Nombre</th><th>Categoría</th><th style="text-align:right">Stock</th><th style="text-align:right">Mín.</th><th style="text-align:right">Costo</th><th style="text-align:right">Precio</th><th style="text-align:center">Estado</th><th></th></tr></thead><tbody id="inv-table-body"></tbody></table></div>
+        </div>
+      </div>
+      <!-- KARDEX -->
+      <div id="kardex-view" class="view">
+        <div class="page">
+          <div class="page-header"><div><div class="page-title">Kardex / Costos</div><div class="page-subtitle">Historial de movimientos de inventario</div></div></div>
+          <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+            <select id="kardex-prod-sel" style="flex:1;min-width:200px;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:13px;outline:none"><option value="">— Seleccionar producto —</option></select>
+            <button class="btn-primary" onclick="loadKardex()">Ver Movimientos</button>
+          </div>
+          <div id="kardex-prod-info" style="background:#eff6ff;border-radius:10px;padding:12px 16px;margin-bottom:14px;display:none;gap:24px;flex-wrap:wrap"></div>
+          <div class="data-table"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Referencia</th><th>Motivo</th><th style="text-align:right">Cant.</th><th style="text-align:right">Costo</th><th style="text-align:right">Precio</th><th style="text-align:right">Saldo</th><th>Usuario</th></tr></thead><tbody id="kardex-table-body"></tbody></table></div>
+        </div>
+      </div>
+      <!-- COMPRAS -->
+      <div id="purchases-view" class="view">
+        <div class="page">
+          <div class="page-header"><div><div class="page-title">Compras</div><div class="page-subtitle" id="purchases-count"></div></div><button class="btn-primary" id="btn-new-purchase">+ Nueva Orden de Compra</button></div>
+          <div class="data-table"><table><thead><tr><th>Fecha</th><th>Proveedor</th><th>N° Doc.</th><th style="text-align:right">Total</th><th>F. Pago</th><th>Estado</th><th>Usuario</th><th></th></tr></thead><tbody id="purchases-table-body"></tbody></table></div>
+        </div>
+      </div>
+      <!-- DEVOLUCIONES -->
+      <div id="returns-view" class="view">
+        <div class="page">
+          <div class="page-header"><div><div class="page-title">Devoluciones</div><div class="page-subtitle" id="returns-count"></div></div><button class="btn-primary" id="btn-new-return">+ Nueva Devolución</button></div>
+          <div class="data-table"><table><thead><tr><th>Fecha</th><th>Factura Origen</th><th>Motivo</th><th style="text-align:right">Total</th><th>Usuario</th></tr></thead><tbody id="returns-table-body"></tbody></table></div>
+        </div>
+      </div>
+      <!-- CxC -->
+      <div id="cxc-view" class="view">
+        <div class="page">
+          <div class="page-header">
+            <div><div class="page-title">Cuentas por Cobrar</div><div class="page-subtitle" id="cxc-vencidas" style="color:#dc2626"></div></div>
+            <div style="display:flex;gap:10px;align-items:center"><div style="background:#fef2f2;border-radius:10px;padding:8px 16px"><div style="font-size:10px;color:#64748b;font-weight:700">PENDIENTE</div><div style="font-size:15px;font-weight:700;color:#dc2626" id="cxc-total">L. 0.00</div></div><button class="btn-primary" style="background:#0891b2" onclick="estadoCuentaCxC()">📋 Estado de Cuenta</button><button class="btn-primary" id="btn-new-cxc">+ Nueva</button></div>
+          </div>
+          <div class="data-table"><table><thead><tr><th>Cliente</th><th>Referencia</th><th>Fecha</th><th>Vencimiento</th><th style="text-align:right">Monto</th><th style="text-align:right">Saldo</th><th>Estado</th><th></th></tr></thead><tbody id="cxc-table-body"></tbody></table></div>
+        </div>
+      </div>
+      <!-- CxP -->
+      <div id="cxp-view" class="view">
+        <div class="page">
+          <div class="page-header">
+            <div><div class="page-title">Cuentas por Pagar</div><div class="page-subtitle" id="cxp-vencidas" style="color:#dc2626"></div></div>
+            <div style="display:flex;gap:10px;align-items:center"><div style="background:#fff7ed;border-radius:10px;padding:8px 16px"><div style="font-size:10px;color:#64748b;font-weight:700">PENDIENTE</div><div style="font-size:15px;font-weight:700;color:#ea580c" id="cxp-total">L. 0.00</div></div><button class="btn-primary" style="background:#0891b2" onclick="estadoCuentaCxP()">📋 Estado de Cuenta</button><button class="btn-primary" id="btn-new-cxp">+ Nueva</button></div>
+          </div>
+          <div class="data-table"><table><thead><tr><th>Proveedor</th><th>Referencia</th><th>Fecha</th><th>Vencimiento</th><th style="text-align:right">Monto</th><th style="text-align:right">Saldo</th><th>Estado</th><th></th></tr></thead><tbody id="cxp-table-body"></tbody></table></div>
+        </div>
+      </div>
+      <!-- REPORTES -->
+      <div id="reports-view" class="view">
+        <div class="page">
+          <div class="page-title" style="margin-bottom:6px">Reportes</div>
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:14px 20px;margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+            <span style="font-size:12px;font-weight:700;color:#64748b">PERÍODO</span>
+            <label style="font-size:12px;color:#64748b">Desde <input type="date" id="rep-fecha-ini" style="border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;font-size:12px;margin-left:4px;outline:none"></label>
+            <label style="font-size:12px;color:#64748b">Hasta <input type="date" id="rep-fecha-fin" style="border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;font-size:12px;margin-left:4px;outline:none"></label>
+            <label style="font-size:12px;color:#64748b">Hora ini <input type="time" id="rep-hora-ini" step="1" style="border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;font-size:12px;margin-left:4px;outline:none"></label>
+            <label style="font-size:12px;color:#64748b">Hora fin <input type="time" id="rep-hora-fin" step="1" style="border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;font-size:12px;margin-left:4px;outline:none"></label>
+            <label style="font-size:12px;color:#64748b;display:flex;align-items:center;gap:6px">Serie
+              <select id="rep-serie" style="border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;font-size:12px;outline:none;font-family:monospace">
+                <option value="">Todas las series</option>
+              </select>
+            </label>
+          </div>
+          <div class="report-cards">
+            <div class="report-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:40px;height:40px;background:#f0fdf4;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">🧾</div><div><div style="font-weight:700;color:#1e293b">Corte de Caja (Ticket)</div><div style="font-size:11px;color:#94a3b8">80mm · filtro hora</div></div></div><div style="font-size:12px;color:#64748b;margin-bottom:14px">Ticket 80mm con filtro hora/minuto/segundo y desglose por forma de pago.</div><button class="btn-primary" style="width:100%;justify-content:center" onclick="reporteCorteCajaDetalle()">🖨️ Ticket 80mm</button></div>
+            <div class="report-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:40px;height:40px;background:#e0f2fe;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">📄</div><div><div style="font-weight:700;color:#1e293b">Corte de Caja (Carta)</div><div style="font-size:11px;color:#94a3b8">Carta · filtro hora</div></div></div><div style="font-size:12px;color:#64748b;margin-bottom:14px">Corte de caja en tamaño Carta con detalle de facturas y resumen de formas de pago.</div><button class="btn-primary" style="width:100%;justify-content:center" onclick="reporteCorteCajaCartaDetalle()">🖨️ Imprimir Carta</button></div>
+            <div class="report-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:40px;height:40px;background:#fef3c7;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">📒</div><div><div style="font-weight:700;color:#1e293b">Libro Fiscal</div><div style="font-size:11px;color:#94a3b8">Legal Apaisado · SAR</div></div></div><div style="font-size:12px;color:#64748b;margin-bottom:14px">Libro de ventas fiscal: gravados, exentos, ISV 15%, ISV 18%, forma de pago y estado.</div><button class="btn-primary" style="width:100%;justify-content:center" onclick="reporteLibroFiscal()">🖨️ Generar</button></div>
+            <div class="report-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:40px;height:40px;background:#eff6ff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">📋</div><div><div style="font-weight:700;color:#1e293b">Master de Ventas</div><div style="font-size:11px;color:#94a3b8">Carta · Apaisado</div></div></div><div style="font-size:12px;color:#64748b;margin-bottom:14px">Detalle completo de facturas con RTN, importes gravados e ISV.</div><button class="btn-primary" style="width:100%;justify-content:center" onclick="reporteMasterVentas()">🖨️ Generar</button></div>
+            <div class="report-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:40px;height:40px;background:#fdf4ff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">📊</div><div><div style="font-weight:700;color:#1e293b">Ventas por Categoría</div><div style="font-size:11px;color:#94a3b8">Carta</div></div></div><div style="font-size:12px;color:#64748b;margin-bottom:14px">Ventas agrupadas por categoría con unidades y participación %.</div><button class="btn-primary" style="width:100%;justify-content:center" onclick="reporteVentasCategoria()">🖨️ Generar</button></div>
+            <div class="report-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:40px;height:40px;background:#fefce8;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">📅</div><div><div style="font-weight:700;color:#1e293b">Análisis por Mes</div><div style="font-size:11px;color:#94a3b8">Carta</div></div></div><div style="font-size:12px;color:#64748b;margin-bottom:14px">Totales mensuales, ISV recaudado y promedio por transacción.</div><button class="btn-primary" style="width:100%;justify-content:center" onclick="reporteAnalisisMes()">🖨️ Generar</button></div>
+            <div class="report-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:40px;height:40px;background:#fff7ed;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">📦</div><div><div style="font-weight:700;color:#1e293b">Inventario Físico</div><div style="font-size:11px;color:#94a3b8">Carta · Con firmas</div></div></div><div style="font-size:12px;color:#64748b;margin-bottom:14px">Lista de productos con stock, mínimo, precios y espacio para conteo físico.</div><button class="btn-primary" style="width:100%;justify-content:center" onclick="reporteInventario()">🖨️ Generar</button></div>
+            <div class="report-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:40px;height:40px;background:#ecfdf5;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">💹</div><div><div style="font-weight:700;color:#1e293b">Valorización Inventario</div><div style="font-size:11px;color:#94a3b8">Carta · Apaisado</div></div></div><div style="font-size:12px;color:#64748b;margin-bottom:14px">Valor del inventario a costo, a precio de venta y margen potencial por producto.</div><button class="btn-primary" style="width:100%;justify-content:center" onclick="reporteValorizacion()">🖨️ Generar</button></div>
+            <div class="report-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:40px;height:40px;background:#f0fdf4;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">📈</div><div><div style="font-weight:700;color:#1e293b">Ventas Artículo/Día</div><div style="font-size:11px;color:#94a3b8">Carta · Apaisado</div></div></div><div style="font-size:12px;color:#64748b;margin-bottom:14px">Detalle diario por artículo: unidades vendidas y monto por fecha.</div><button class="btn-primary" style="width:100%;justify-content:center" onclick="reporteVentasArticulo()">🖨️ Generar</button></div>
+            <div class="report-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:40px;height:40px;background:#eff6ff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">💰</div><div><div style="font-weight:700;color:#1e293b">Cuentas por Cobrar</div><div style="font-size:11px;color:#94a3b8">Carta · Apaisado</div></div></div><div style="font-size:12px;color:#64748b;margin-bottom:14px">Listado de clientes con saldo pendiente, vencimientos y estado de cobro.</div><button class="btn-primary" style="width:100%;justify-content:center" onclick="reporteCxC()">🖨️ Generar</button></div>
+            <div class="report-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:40px;height:40px;background:#fefce8;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">💳</div><div><div style="font-weight:700;color:#1e293b">Cuentas por Pagar</div><div style="font-size:11px;color:#94a3b8">Carta · Apaisado</div></div></div><div style="font-size:12px;color:#64748b;margin-bottom:14px">Listado de deudas a proveedores con montos, abonos, saldos y alertas.</div><button class="btn-primary" style="width:100%;justify-content:center" onclick="reporteCxP()">🖨️ Generar</button></div>
+            <div class="report-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:40px;height:40px;background:#f8f0ff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">🎨</div><div><div style="font-weight:700;color:#1e293b">Editor de Reportes</div><div style="font-size:11px;color:#94a3b8">Personaliza HTML</div></div></div><div style="font-size:12px;color:#64748b;margin-bottom:14px">Personaliza el diseño y estructura de los reportes del sistema.</div><button class="btn-primary" style="width:100%;justify-content:center;background:#7c3aed" onclick="openModal('editor-reporte-modal')">🎨 Abrir Editor</button></div>
+          </div>
+        </div>
+      </div>
+      <!-- USUARIOS (admin) -->
+      <div id="users-view" class="view">
+        <div class="page">
+          <div class="page-header"><div><div class="page-title">Usuarios</div><div class="page-subtitle" id="users-count"></div></div><button class="btn-primary" id="btn-new-user">+ Nuevo Usuario</button></div>
+          <div class="data-table"><table><thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Sucursal</th><th>Estado</th><th></th></tr></thead><tbody id="users-table-body"></tbody></table></div>
+        </div>
+      </div>
+      <!-- SUCURSALES (admin) -->
+      <div id="branches-view" class="view">
+        <div class="page">
+          <div class="page-header"><div><div class="page-title">Sucursales</div><div class="page-subtitle" id="branches-count"></div></div><button class="btn-primary" id="btn-new-branch">+ Nueva Sucursal</button></div>
+          <div class="cards-grid" id="branches-cards"></div>
+        </div>
+      </div>
+      <!-- SYNC -->
+      <div id="sync-view" class="view">
+        <div class="page" style="max-width:700px">
+          <div class="page-title" style="margin-bottom:6px">Sincronización de Sucursales</div>
+          <div class="page-subtitle" style="margin-bottom:20px">Estado del registro de cambios entre sucursales</div>
+          <div id="sync-status" style="background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:20px;margin-bottom:16px"></div>
+          <button class="btn-primary" onclick="loadSync()">🔄 Actualizar estado</button>
+        </div>
+      </div>
+      <!-- BANCOS -->
+      <div id="bancos-view" class="view">
+        <div class="page">
+          <div class="page-header">
+            <div><div class="page-title">Módulo de Bancos</div><div class="page-subtitle" id="bancos-subtitle"></div></div>
+            <div style="display:flex;gap:10px"><button class="btn-primary" id="btn-new-banco">+ Nueva Cuenta</button></div>
+          </div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:18px" id="bancos-cards"></div>
+          <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+            <select id="banco-sel-mov" style="border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:13px;outline:none;min-width:200px"><option value="">&#8212; Seleccionar Banco &#8212;</option></select>
+            <input type="date" id="banco-fecha-ini" style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:12px;outline:none">
+            <input type="date" id="banco-fecha-fin" style="border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:12px;outline:none">
+            <button class="btn-primary" onclick="loadMovimientosBanco()">Ver Movimientos</button>
+            <button class="btn-primary" style="background:#059669" onclick="reporteConsolidacionBancaria()">&#128202; Consolidación</button>
+            <button class="btn-primary" style="background:#7c3aed" onclick="openMovimientoModal()">+ Movimiento</button>
+          </div>
+          <div class="data-table"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Referencia</th><th style="text-align:right">Monto</th><th style="text-align:right">Saldo Anterior</th><th style="text-align:right">Saldo Nuevo</th><th>Usuario</th></tr></thead><tbody id="banco-mov-body"></tbody></table></div>
+        </div>
+      </div>
+      <!-- IMPUESTOS -->
+      <div id="impuestos-view" class="view">
+        <div class="page">
+          <div class="page-header">
+            <div><div class="page-title">Definición de Impuestos</div><div class="page-subtitle" id="imp-count"></div></div>
+            <button class="btn-primary" id="btn-new-impuesto">+ Crear Impuesto</button>
+          </div>
+          <div class="data-table"><table><thead><tr><th>Nombre</th><th>Tasa</th><th>Tipo</th><th>Aplica A</th><th>Estado</th><th></th></tr></thead><tbody id="imp-table-body"></tbody></table></div>
+        </div>
+      </div>
+      <!-- CONFIG -->
+      <div id="config-view" class="view">
+        <div class="page" style="max-width:760px">
+          <div class="page-header"><div><div class="page-title">Configuración</div><div class="page-subtitle">Datos de la sucursal actual</div></div></div>
+          <form id="config-form">
+            <div class="config-section">
+              <div class="config-section-title">Datos de la Sucursal</div>
+              <div class="form-grid">
+                <div class="form-field span2"><label>Nombre</label><input type="text" id="cfg-nombre" required></div>
+                <div class="form-field"><label>RTN</label><input type="text" id="cfg-rtn"></div>
+                <div class="form-field"><label>Teléfono</label><input type="text" id="cfg-telefono"></div>
+                <div class="form-field span2"><label>Dirección</label><input type="text" id="cfg-direccion"></div>
+                <div class="form-field span2"><label>CAI</label><input type="text" id="cfg-cai" style="font-family:monospace"></div>
+                <div class="form-field span2"><label>Serie de Factura</label><input type="text" id="cfg-serie" style="font-family:monospace"></div>
+                <div class="form-field"><label>Rango Inicio</label><input type="text" id="cfg-rango-ini" style="font-family:monospace"></div>
+                <div class="form-field"><label>Rango Fin</label><input type="text" id="cfg-rango-fin" style="font-family:monospace"></div>
+                <div class="form-field span2"><label>Fecha Límite Emisión</label><input type="date" id="cfg-fecha-limite"></div>
+              </div>
+            </div>
+            <div class="save-success" id="config-toast" style="display:none">✅ Configuración guardada</div>
+            <button type="submit" class="btn-save">Guardar Configuración</button>
+          </form>
+
+          <!-- Series de Factura (CAI/SAR) -->
+          <div style="margin-top:28px;padding-bottom:20px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+              <div>
+                <div style="font-size:16px;font-weight:700;color:#1e3a5f">Series de Factura</div>
+                <div style="font-size:12px;color:#94a3b8">Configura los parámetros del CAI del SAR</div>
+              </div>
+              <button class="btn-primary" onclick="abrirModalSerie(null)" style="font-size:13px">+ Nueva Serie</button>
+            </div>
+            <div id="series-lista"></div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+    <!-- VISTA: TURNOS CAJERO -->
+    <div id="turnos-view" class="view"></div>
+    <!-- VISTA: WHATSAPP ADMIN -->
+    <div id="whatsapp-view" class="view"></div>
+    <!-- VISTA: TICKETS -->
+    <div id="tickets-view" class="view"></div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="print-modal" style="display:none">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-title">Formato de Impresión</div>
+    <p style="font-size:13px;color:#64748b;margin-bottom:16px">Selecciona el formato deseado</p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button onclick="doPrint('carta')" style="display:flex;align-items:center;gap:14px;padding:14px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;cursor:pointer;text-align:left" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='#e2e8f0'">
+        <div style="width:36px;height:36px;background:#eff6ff;border-radius:8px;display:flex;align-items:center;justify-content:center">📄</div>
+        <div><div style="font-size:14px;font-weight:700;color:#1e293b">Carta / A4</div><div style="font-size:12px;color:#94a3b8">Factura formal con logo</div></div>
+      </button>
+      <button onclick="doPrint('ticket')" style="display:flex;align-items:center;gap:14px;padding:14px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;cursor:pointer;text-align:left" onmouseover="this.style.borderColor='#16a34a'" onmouseout="this.style.borderColor='#e2e8f0'">
+        <div style="width:36px;height:36px;background:#f0fdf4;border-radius:8px;display:flex;align-items:center;justify-content:center">🧾</div>
+        <div><div style="font-size:14px;font-weight:700;color:#1e293b">Ticket 80mm</div><div style="font-size:12px;color:#94a3b8">Impresora térmica</div></div>
+      </button>
+    </div>
+    <button onclick="closePrintModal()" class="btn-cancel" style="width:100%;margin-top:12px">Cancelar</button>
+  </div>
+</div>
+<div class="modal-overlay" id="prod-modal" style="display:none">
+  <div class="modal">
+    <div class="modal-title" id="prod-modal-title">Nuevo Producto</div>
+    <form class="modal-form" id="prod-modal-form">
+      <div class="form-grid">
+        <div class="form-field"><label>Código</label><input type="text" id="prod-codigo" required></div>
+        <div class="form-field"><label>Nombre</label><input type="text" id="prod-nombre" required></div>
+        <div class="form-field"><label>Categoría</label><input type="text" id="prod-categoria" required></div>
+        <div class="form-field"><label>Precio Venta (L.)</label><input type="number" id="prod-precio" step="0.01" min="0" required></div>
+        <div class="form-field"><label>Costo (L.)</label><input type="number" id="prod-costo" step="0.01" min="0" value="0"></div>
+        <div class="form-field"><label>Stock Inicial</label><input type="number" id="prod-stock" min="0" value="0"></div>
+        <div class="form-field"><label>Stock Mínimo</label><input type="number" id="prod-stock-min" min="0" value="0"></div>
+      </div>
+      <label class="check-label"><input type="checkbox" id="prod-gravado" checked> Sujeto a ISV</label>
+      <div class="modal-actions"><button type="button" class="btn-cancel" id="prod-modal-cancel">Cancelar</button><button type="submit" class="btn-confirm">Guardar</button></div>
+    </form>
+  </div>
+</div>
+<div class="modal-overlay" id="client-modal" style="display:none">
+  <div class="modal">
+    <div class="modal-title" id="client-modal-title">Nuevo Cliente</div>
+    <form class="modal-form" id="client-modal-form">
+      <div class="form-field"><label>Nombre *</label><input type="text" id="client-nombre" required></div>
+      <div class="form-field"><label>RTN</label><input type="text" id="client-rtn"></div>
+      <div class="form-field"><label>Dirección</label><input type="text" id="client-direccion"></div>
+      <div class="form-field"><label>Teléfono</label><input type="text" id="client-telefono"></div>
+      <div class="form-field"><label>Email</label><input type="email" id="client-email"></div>
+      <div class="form-field"><label>Límite de Crédito (L.)</label><input type="number" id="client-credito" min="0" value="0"></div>
+      <div class="modal-actions"><button type="button" class="btn-cancel" id="client-modal-cancel">Cancelar</button><button type="submit" class="btn-confirm">Guardar</button></div>
+    </form>
+  </div>
+</div>
+<div class="modal-overlay" id="supplier-modal" style="display:none">
+  <div class="modal">
+    <div class="modal-title" id="supplier-modal-title">Nuevo Proveedor</div>
+    <form class="modal-form" id="supplier-modal-form">
+      <div class="form-field"><label>Nombre *</label><input type="text" id="sup-nombre" required></div>
+      <div class="form-field"><label>RTN</label><input type="text" id="sup-rtn"></div>
+      <div class="form-field"><label>Contacto</label><input type="text" id="sup-contacto"></div>
+      <div class="form-field"><label>Teléfono</label><input type="text" id="sup-telefono"></div>
+      <div class="form-field"><label>Email</label><input type="email" id="sup-email"></div>
+      <div class="form-field"><label>Dirección</label><input type="text" id="sup-direccion"></div>
+      <div class="form-field"><label>Límite de Crédito (L.)</label><input type="number" id="sup-credito" min="0" value="0"></div>
+      <div class="modal-actions"><button type="button" class="btn-cancel" id="supplier-modal-cancel">Cancelar</button><button type="submit" class="btn-confirm">Guardar</button></div>
+    </form>
+  </div>
+</div>
+<div class="modal-overlay" id="ajuste-modal" style="display:none">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-title">Ajuste de Inventario</div>
+    <div id="ajuste-prod-name" style="font-size:13px;color:#64748b;margin-bottom:14px"></div>
+    <form class="modal-form" id="ajuste-form">
+      <input type="hidden" id="ajuste-prod-id">
+      <div class="form-field"><label>Tipo</label><select id="ajuste-tipo" style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:13px;outline:none"><option value="entrada">Entrada (aumentar)</option><option value="salida">Salida (reducir)</option></select></div>
+      <div class="form-field"><label>Cantidad</label><input type="number" id="ajuste-cantidad" min="1" required></div>
+      <div class="form-field"><label>Costo Unitario (L.)</label><input type="number" id="ajuste-costo" step="0.01" min="0" value="0"></div>
+      <div class="form-field"><label>Motivo</label><input type="text" id="ajuste-motivo" placeholder="Compra, devolución, merma..."></div>
+      <div class="modal-actions"><button type="button" class="btn-cancel" id="ajuste-cancel">Cancelar</button><button type="submit" class="btn-confirm">Aplicar</button></div>
+    </form>
+  </div>
+</div>
+<div class="modal-overlay" id="cxc-modal" style="display:none">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-title">Nueva Cuenta por Cobrar</div>
+    <form class="modal-form" id="cxc-form">
+      <div class="form-field"><label>Cliente</label><select id="cxc-cliente-sel" style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:13px;outline:none;width:100%"></select></div>
+      <div class="form-field"><label>Referencia / N° Factura</label><input type="text" id="cxc-referencia"></div>
+      <div class="form-field"><label>Monto (L.)</label><input type="number" id="cxc-monto" step="0.01" min="0" required></div>
+      <div class="form-field"><label>Vencimiento</label><input type="date" id="cxc-vencimiento" required></div>
+      <div class="modal-actions"><button type="button" class="btn-cancel" id="cxc-modal-cancel">Cancelar</button><button type="submit" class="btn-confirm">Guardar</button></div>
+    </form>
+  </div>
+</div>
+<div class="modal-overlay" id="cxp-modal" style="display:none">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-title">Nueva Cuenta por Pagar</div>
+    <form class="modal-form" id="cxp-form">
+      <div class="form-field"><label>Proveedor</label><select id="cxp-prov-sel" style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:13px;outline:none;width:100%"></select></div>
+      <div class="form-field"><label>Referencia / N° Doc.</label><input type="text" id="cxp-referencia"></div>
+      <div class="form-field"><label>Monto (L.)</label><input type="number" id="cxp-monto" step="0.01" min="0" required></div>
+      <div class="form-field"><label>Vencimiento</label><input type="date" id="cxp-vencimiento" required></div>
+      <div class="modal-actions"><button type="button" class="btn-cancel" id="cxp-modal-cancel">Cancelar</button><button type="submit" class="btn-confirm">Guardar</button></div>
+    </form>
+  </div>
+</div>
+<div class="modal-overlay" id="user-modal" style="display:none">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title" id="user-modal-title">Nuevo Usuario</div>
+    <form class="modal-form" id="user-modal-form">
+      <div class="form-field"><label>Nombre Completo</label><input type="text" id="u-nombre" required></div>
+      <div class="form-field"><label>Usuario (login)</label><input type="text" id="u-username" required></div>
+      <div class="form-field"><label>Contraseña</label><input type="password" id="u-password" placeholder="Dejar vacío para no cambiar"></div>
+      <div class="form-field"><label>Rol</label><select id="u-rol" style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:13px;outline:none;width:100%"><option value="cajero">Cajero</option><option value="supervisor">Supervisor</option><option value="admin">Administrador</option></select></div>
+      <div class="form-field"><label>Sucursal</label><select id="u-sucursal" style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:13px;outline:none;width:100%"></select></div>
+      <div class="form-field"><label>Estado</label><select id="u-activo" style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:13px;outline:none;width:100%"><option value="1">Activo</option><option value="0">Inactivo</option></select></div>
+      <div class="modal-actions"><button type="button" class="btn-cancel" id="user-modal-cancel">Cancelar</button><button type="submit" class="btn-confirm">Guardar</button></div>
+    </form>
+  </div>
+</div>
+<div class="modal-overlay" id="branch-modal" style="display:none">
+  <div class="modal">
+    <div class="modal-title" id="branch-modal-title">Nueva Sucursal</div>
+    <form class="modal-form" id="branch-modal-form">
+      <div class="form-grid">
+        <div class="form-field span2"><label>Nombre *</label><input type="text" id="br-nombre" required></div>
+        <div class="form-field"><label>RTN</label><input type="text" id="br-rtn"></div>
+        <div class="form-field"><label>Teléfono</label><input type="text" id="br-telefono"></div>
+        <div class="form-field span2"><label>Dirección</label><input type="text" id="br-direccion"></div>
+        <div class="form-field span2"><label>CAI</label><input type="text" id="br-cai" style="font-family:monospace"></div>
+        <div class="form-field span2"><label>Serie Factura</label><input type="text" id="br-serie" style="font-family:monospace"></div>
+        <div class="form-field"><label>Rango Inicio</label><input type="text" id="br-rango-ini" style="font-family:monospace"></div>
+        <div class="form-field"><label>Rango Fin</label><input type="text" id="br-rango-fin" style="font-family:monospace"></div>
+        <div class="form-field span2"><label>Fecha Límite Emisión</label><input type="date" id="br-fecha-limite"></div>
+      </div>
+      <div class="modal-actions"><button type="button" class="btn-cancel" id="branch-modal-cancel">Cancelar</button><button type="button" class="btn-danger" id="branch-modal-delete" style="display:none;background:#dc2626;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">🗑️ Eliminar</button><button type="submit" class="btn-confirm">Guardar</button></div>
+    </form>
+  </div>
+</div>
+<div class="modal-overlay" id="purchase-modal" style="display:none">
+  <div class="modal" style="max-width:650px">
+    <div class="modal-title">Nueva Orden de Compra</div>
+    <form class="modal-form" id="purchase-modal-form">
+      <div class="form-grid">
+        <div class="form-field"><label>Proveedor</label><select id="pur-proveedor" style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:13px;outline:none;width:100%"></select></div>
+        <div class="form-field"><label>N° Documento</label><input type="text" id="pur-doc"></div>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:#64748b;margin:12px 0 8px">ARTÍCULOS</div>
+      <div id="pur-items-list"></div>
+      <button type="button" class="btn-primary" onclick="addPurchaseItem()" style="margin-bottom:12px;font-size:12px">+ Agregar Artículo</button>
+      <div style="text-align:right;font-size:14px;font-weight:700" id="pur-total">Total: L. 0.00</div>
+      <div class="form-field" style="margin-top:8px"><label>Notas</label><input type="text" id="pur-notas"></div>
+      <div style="margin-top:12px;border-top:1px solid #e2e8f0;padding-top:12px">
+        <div style="font-size:12px;font-weight:700;color:#64748b;margin-bottom:8px">FORMA DE PAGO</div>
+        <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+          <button type="button" onclick="setPurFormaPago('efectivo')" id="pur-fp-efectivo" style="flex:1;padding:8px 4px;font-size:11px;font-weight:600;border-radius:8px;border:2px solid #2563eb;cursor:pointer;background:#2563eb;color:#fff">💵 Efectivo</button>
+          <button type="button" onclick="setPurFormaPago('tarjeta')" id="pur-fp-tarjeta" style="flex:1;padding:8px 4px;font-size:11px;font-weight:600;border-radius:8px;border:1px solid #e2e8f0;cursor:pointer;background:#fff;color:#475569">💳 Tarjeta</button>
+          <button type="button" onclick="setPurFormaPago('transferencia')" id="pur-fp-transferencia" style="flex:1;padding:8px 4px;font-size:11px;font-weight:600;border-radius:8px;border:1px solid #e2e8f0;cursor:pointer;background:#fff;color:#475569">🏦 Transfer.</button>
+          <button type="button" onclick="setPurFormaPago('credito')" id="pur-fp-credito" style="flex:1;padding:8px 4px;font-size:11px;font-weight:600;border-radius:8px;border:1px solid #e2e8f0;cursor:pointer;background:#fff;color:#475569">📋 Crédito</button>
+        </div>
+        <div id="pur-banco-row" style="display:none">
+          <label style="font-size:12px;font-weight:600;color:#64748b">Banco a debitar</label>
+          <select id="pur-banco" style="width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:12px;outline:none;margin-top:4px;box-sizing:border-box">
+            <option value="">— Seleccionar banco —</option>
+          </select>
+        </div>
+        <div id="pur-credito-row" style="display:none;background:#fef2f2;border:1px solid #fca5a5;border-radius:8px;padding:8px">
+          <div style="font-size:11px;color:#dc2626;font-weight:600;margin-bottom:6px">⚠️ Se creará cuenta en Cuentas por Pagar</div>
+          <label style="font-size:12px;font-weight:600;color:#64748b">Fecha vencimiento</label>
+          <input type="date" id="pur-vencimiento" style="width:100%;border:1px solid #fca5a5;border-radius:6px;padding:6px 10px;font-size:12px;outline:none;margin-top:4px;box-sizing:border-box">
+        </div>
+      </div>
+      <div class="modal-actions"><button type="button" class="btn-cancel" id="purchase-modal-cancel">Cancelar</button><button type="submit" class="btn-confirm">Crear Orden</button></div>
+    </form>
+  </div>
+</div>
+<div class="modal-overlay" id="return-modal" style="display:none">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-title">Nueva Devolución</div>
+    <form class="modal-form" id="return-modal-form">
+      <div class="form-field"><label>N° Factura Origen</label>
+        <div style="display:flex;gap:8px"><input type="text" id="ret-factura" placeholder="Buscar por número de factura..." style="flex:1"><button type="button" class="btn-primary" onclick="searchReturnSale()" style="font-size:12px">Buscar</button></div>
+      </div>
+      <div id="ret-sale-info" style="display:none;background:#f8fafc;border-radius:8px;padding:12px;margin-bottom:12px;font-size:13px"></div>
+      <div id="ret-items-list"></div>
+      <div class="form-field"><label>Motivo de Devolución *</label><input type="text" id="ret-motivo" required></div>
+      <div class="modal-actions"><button type="button" class="btn-cancel" id="return-modal-cancel">Cancelar</button><button type="submit" class="btn-confirm">Registrar Devolución</button></div>
+    </form>
+  </div>
+</div>
+<script src="app.js"></script>
+<!-- MODAL BANCO -->
+<div class="modal-overlay" id="banco-modal" style="display:none">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title" id="banco-modal-title">Nueva Cuenta Bancaria</div>
+    <form class="modal-form" id="banco-modal-form">
+      <div class="form-field"><label>Nombre del Banco *</label><input type="text" id="banco-nombre" required></div>
+      <div class="form-field"><label>N° de Cuenta</label><input type="text" id="banco-cuenta"></div>
+      <div class="form-field"><label>Tipo de Cuenta</label><select id="banco-tipo" style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:13px;outline:none;width:100%"><option value="corriente">Corriente</option><option value="ahorro">Ahorro</option><option value="plazo">Plazo Fijo</option></select></div>
+      <div class="form-field"><label>Moneda</label><select id="banco-moneda" style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:13px;outline:none;width:100%"><option value="HNL">Lempiras (HNL)</option><option value="USD">Dólares (USD)</option></select></div>
+      <div class="form-field"><label>Saldo Inicial (L.)</label><input type="number" id="banco-saldo-ini" step="0.01" min="0" value="0"></div>
+      <div class="modal-actions"><button type="button" class="btn-cancel" id="banco-modal-cancel">Cancelar</button><button type="submit" class="btn-confirm">Guardar</button></div>
+    </form>
+  </div>
+</div>
+<!-- MODAL MOVIMIENTO BANCARIO -->
+<div class="modal-overlay" id="movimiento-modal" style="display:none">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">Nuevo Movimiento Bancario</div>
+    <form class="modal-form" id="movimiento-modal-form">
+      <div class="form-field"><label>Banco *</label><select id="mov-banco-id" style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:13px;outline:none;width:100%"></select></div>
+      <div class="form-field"><label>Tipo *</label><select id="mov-tipo" style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:13px;outline:none;width:100%"><option value="deposito">Depósito</option><option value="retiro">Retiro</option><option value="transferencia">Transferencia</option><option value="nota_credito">Nota de Crédito</option><option value="nota_debito">Nota de Débito</option></select></div>
+      <div class="form-field"><label>Fecha *</label><input type="datetime-local" id="mov-fecha" required></div>
+      <div class="form-field"><label>Monto (L.) *</label><input type="number" id="mov-monto" step="0.01" min="0.01" required></div>
+      <div class="form-field"><label>Descripción</label><input type="text" id="mov-descripcion"></div>
+      <div class="form-field"><label>Referencia / N° Cheque</label><input type="text" id="mov-referencia"></div>
+      <div class="modal-actions"><button type="button" class="btn-cancel" id="movimiento-modal-cancel">Cancelar</button><button type="submit" class="btn-confirm">Registrar</button></div>
+    </form>
+  </div>
+</div>
+<!-- MODAL IMPUESTO -->
+<div class="modal-overlay" id="impuesto-modal" style="display:none">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-title" id="imp-modal-title">Crear Impuesto</div>
+    <form class="modal-form" id="impuesto-modal-form">
+      <div class="form-field"><label>Nombre *</label><input type="text" id="imp-nombre" required></div>
+      <div class="form-field"><label>Tasa (%)</label><input type="number" id="imp-tasa" step="0.01" min="0" required></div>
+      <div class="form-field"><label>Tipo</label><select id="imp-tipo" style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:13px;outline:none;width:100%"><option value="porcentaje">Porcentaje</option><option value="fijo">Monto Fijo</option></select></div>
+      <div class="form-field"><label>Aplica A</label><select id="imp-aplica" style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:13px;outline:none;width:100%"><option value="todos">Todos los productos</option><option value="gravados">Solo gravados</option><option value="servicios">Servicios</option></select></div>
+      <div class="modal-actions"><button type="button" class="btn-cancel" id="imp-modal-cancel">Cancelar</button><button type="submit" class="btn-confirm">Guardar</button></div>
+    </form>
+  </div>
+</div>
+<!-- MODAL PERMISOS USUARIO -->
+<div class="modal-overlay" id="permisos-modal" style="display:none">
+  <div class="modal" style="max-width:450px">
+    <div class="modal-title">Bloqueo de Módulos</div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:14px" id="permisos-user-nombre"></div>
+    <div id="permisos-lista" style="display:flex;flex-direction:column;gap:10px"></div>
+    <div class="modal-actions"><button type="button" class="btn-cancel" id="permisos-modal-cancel">Cerrar</button></div>
+  </div>
+</div>
+<!-- MODAL IMPORTAR EXCEL -->
+<div class="modal-overlay" id="excel-modal" style="display:none">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header"><h3>Importar Productos desde Excel</h3>
+      <button onclick="closeModal('excel-modal')" style="background:none;border:none;font-size:18px;cursor:pointer;color:#94a3b8">✕</button></div>
+    <div style="padding:16px 20px 20px;display:flex;flex-direction:column;gap:12px">
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 14px;font-size:12px;color:#1d4ed8">
+        <div style="font-weight:700;margin-bottom:5px">📋 Columnas requeridas en el archivo Excel:</div>
+        <div style="font-family:monospace;background:#fff;border-radius:6px;padding:8px;font-size:11px;line-height:1.9">
+          A: <b>codigo</b> (requerido) &nbsp;|&nbsp; B: <b>nombre</b> (requerido)<br>
+          C: <b>categoria</b> (ej: Alimentos, Servicios) &nbsp;|&nbsp; D: <b>precio_venta</b> (número)<br>
+          E: <b>costo</b> (número) &nbsp;|&nbsp; F: <b>gravado</b> (1=ISV 15%, 0=Exento)
+        </div>
+        <div style="margin-top:5px;font-size:11px">⚠️ Fila 1 = encabezados con nombres exactos. Fila 2 en adelante = datos.</div>
+      </div>
+      <input type="file" id="excel-file-input" accept=".xlsx,.xls"
+        style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:13px;font-family:inherit;width:100%;box-sizing:border-box">
+      <div id="excel-preview" style="display:none;max-height:160px;overflow-y:auto;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:12px"></div>
+      <div id="excel-result" style="display:none"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button type="button" class="btn-cancel" id="excel-modal-cancel">Cancelar</button>
+        <button type="button" class="btn-confirm" id="excel-import-btn" style="display:none" onclick="importarProductosExcel()">📥 Importar</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- MODAL APERTURA DE TURNO -->
+
+<div class="modal-overlay" id="movimiento-caja-modal" style="display:none">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-title">💰 Movimiento de Caja</div>
+    <div style="font-size:12px;color:#64748b;margin-bottom:14px">Registra ingresos o egresos que no son ventas (vueltos, gastos, etc.)</div>
+    <form class="modal-form" id="movimiento-caja-form">
+      <div class="form-field">
+        <label>Tipo *</label>
+        <select id="movcaja-tipo" style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:13px;outline:none;width:100%">
+          <option value="ingreso">📥 Ingreso (entrada de efectivo)</option>
+          <option value="egreso">📤 Egreso (salida de efectivo)</option>
+        </select>
+      </div>
+      <div class="form-field"><label>Concepto *</label><input type="text" id="movcaja-concepto" placeholder="Ej: Pago de proveedor, reembolso..." required></div>
+      <div class="form-field"><label>Monto (L.) *</label><input type="number" id="movcaja-monto" step="0.01" min="0.01" required></div>
+      <div id="movcaja-error" style="color:#dc2626;font-size:12px;min-height:16px;margin-bottom:8px"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" id="movcaja-cancel">Cancelar</button>
+        <button type="submit" class="btn-confirm">Registrar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL EDITOR DE REPORTES -->
+<div class="modal-overlay" id="editor-reporte-modal" style="display:none">
+  <div class="modal" style="max-width:900px;max-height:90vh;overflow-y:auto">
+    <div class="modal-title">Editor de Reportes</div>
+    <div style="font-size:13px;color:#64748b;margin-bottom:14px">Personaliza el HTML del reporte. Los cambios se guardan localmente.</div>
+    <div style="display:flex;gap:12px;margin-bottom:10px;flex-wrap:wrap">
+      <select id="editor-rep-sel" style="border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;font-size:13px;outline:none;flex:1">
+        <option value="corte_caja">Corte de Caja</option>
+        <option value="libro_fiscal">Libro Fiscal</option>
+        <option value="valorizacion">Valorización Inventario</option>
+        <option value="inventario_fisico">Inventario Físico</option>
+      </select>
+      <button class="btn-primary" onclick="cargarEditorReporte()">Cargar</button>
+      <button class="btn-primary" style="background:#059669" onclick="previewEditorReporte()">Vista Previa</button>
+      <button class="btn-primary" style="background:#dc2626" onclick="resetEditorReporte()">Restaurar</button>
+    </div>
+    <textarea id="editor-reporte-textarea" style="width:100%;height:350px;font-family:monospace;font-size:11px;border:1px solid #e2e8f0;border-radius:8px;padding:10px;resize:vertical;outline:none;box-sizing:border-box"></textarea>
+    <div class="modal-actions">
+      <button type="button" class="btn-cancel" id="editor-reporte-cancel">Cerrar</button>
+      <button type="button" class="btn-confirm" onclick="guardarEditorReporte()">Guardar Template</button>
+    </div>
+  </div>
+</div>
+<!-- Modal importar clientes -->
+<div id="import-clientes-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header"><h3>Importar Clientes desde Excel</h3>
+      <button onclick="closeModal('import-clientes-modal')" style="background:none;border:none;font-size:18px;cursor:pointer;color:#94a3b8">✕</button></div>
+    <div style="padding:16px 20px 20px;display:flex;flex-direction:column;gap:12px">
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 14px;font-size:12px;color:#1d4ed8">
+        <div style="font-weight:700;margin-bottom:5px">📋 Columnas requeridas en el archivo Excel:</div>
+        <div style="font-family:monospace;background:#fff;border-radius:6px;padding:8px;font-size:11px;line-height:1.9">
+          A: <b>nombre</b> (requerido) &nbsp;|&nbsp; B: <b>rtn</b> &nbsp;|&nbsp; C: <b>direccion</b><br>
+          D: <b>telefono</b> &nbsp;|&nbsp; E: <b>email</b> &nbsp;|&nbsp; F: <b>limite_credito</b> (número)
+        </div>
+        <div style="margin-top:5px;font-size:11px">⚠️ Fila 1 = encabezados con nombres exactos. Fila 2 en adelante = datos.</div>
+      </div>
+      <input type="file" id="import-clientes-file" accept=".xlsx,.xls"
+        style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:13px;font-family:inherit;width:100%;box-sizing:border-box">
+      <div id="import-clientes-preview" style="display:none;max-height:140px;overflow-y:auto;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:12px"></div>
+      <div id="import-clientes-result" style="display:none"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn-cancel" onclick="closeModal('import-clientes-modal')">Cancelar</button>
+        <button class="btn-primary" style="background:#059669" onclick="procesarImportarClientes()">📥 Importar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal importar proveedores -->
+<div id="import-proveedores-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header"><h3>Importar Proveedores desde Excel</h3>
+      <button onclick="closeModal('import-proveedores-modal')" style="background:none;border:none;font-size:18px;cursor:pointer;color:#94a3b8">✕</button></div>
+    <div style="padding:16px 20px 20px;display:flex;flex-direction:column;gap:12px">
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 14px;font-size:12px;color:#1d4ed8">
+        <div style="font-weight:700;margin-bottom:5px">📋 Columnas requeridas en el archivo Excel:</div>
+        <div style="font-family:monospace;background:#fff;border-radius:6px;padding:8px;font-size:11px;line-height:1.9">
+          A: <b>nombre</b> (requerido) &nbsp;|&nbsp; B: <b>rtn</b> &nbsp;|&nbsp; C: <b>contacto</b><br>
+          D: <b>telefono</b> &nbsp;|&nbsp; E: <b>email</b> &nbsp;|&nbsp; F: <b>direccion</b> &nbsp;|&nbsp; G: <b>limite_credito</b>
+        </div>
+        <div style="margin-top:5px;font-size:11px">⚠️ Fila 1 = encabezados con nombres exactos. Fila 2 en adelante = datos.</div>
+      </div>
+      <input type="file" id="import-proveedores-file" accept=".xlsx,.xls"
+        style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:13px;font-family:inherit;width:100%;box-sizing:border-box">
+      <div id="import-proveedores-preview" style="display:none;max-height:140px;overflow-y:auto;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:12px"></div>
+      <div id="import-proveedores-result" style="display:none"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn-cancel" onclick="closeModal('import-proveedores-modal')">Cancelar</button>
+        <button class="btn-primary" style="background:#059669" onclick="procesarImportarProveedores()">📥 Importar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal importar inventario -->
+<div id="import-inventario-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header"><h3>Importar Movimientos de Inventario</h3>
+      <button onclick="closeModal('import-inventario-modal')" style="background:none;border:none;font-size:18px;cursor:pointer;color:#94a3b8">✕</button></div>
+    <div style="padding:16px 20px 20px;display:flex;flex-direction:column;gap:12px">
+      <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:12px 14px;font-size:12px;color:#1d4ed8">
+        <div style="font-weight:700;margin-bottom:5px">📋 Columnas requeridas en el archivo Excel:</div>
+        <div style="font-family:monospace;background:#fff;border-radius:6px;padding:8px;font-size:11px;line-height:1.9">
+          A: <b>codigo</b> (código del producto — requerido)<br>
+          B: <b>tipo</b> (<i>entrada</i> suma stock · <i>ajuste</i> fija stock exacto — requerido)<br>
+          C: <b>cantidad</b> (número entero — requerido)<br>
+          D: <b>costo_unit</b> (costo unitario — opcional)<br>
+          E: <b>motivo</b> (descripción — opcional)
+        </div>
+        <div style="margin-top:5px;font-size:11px">⚠️ Fila 1 = encabezados. Tipos válidos: <b>entrada</b> o <b>ajuste</b>.</div>
+      </div>
+      <input type="file" id="import-inventario-file" accept=".xlsx,.xls"
+        style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:13px;font-family:inherit;width:100%;box-sizing:border-box">
+      <div id="import-inventario-preview" style="display:none;max-height:140px;overflow-y:auto;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:12px"></div>
+      <div id="import-inventario-result" style="display:none"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn-cancel" onclick="closeModal('import-inventario-modal')">Cancelar</button>
+        <button class="btn-primary" style="background:#059669" onclick="procesarImportarInventario()">📥 Importar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Serie Factura -->
+<div id="serie-modal" class="modal-overlay" style="display:none">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-header">
+      <h3 id="serie-modal-title">Nueva Serie de Factura</h3>
+      <button onclick="closeModal('serie-modal')" style="background:none;border:none;font-size:18px;cursor:pointer;color:#94a3b8">✕</button>
+    </div>
+    <form id="serie-modal-form" style="padding:16px 20px 20px;display:flex;flex-direction:column;gap:12px">
+      <div class="form-field">
+        <label>Nombre de la serie (ej: Serie A, Punto 1)</label>
+        <input type="text" id="s-nombre" placeholder="Ej: Serie Principal" required>
+      </div>
+      <div class="form-field">
+        <label>Serie SAR (ej: 000-02-01)</label>
+        <input type="text" id="s-serie" placeholder="000-02-01" required style="font-family:monospace">
+      </div>
+      <div class="form-field">
+        <label>CAI</label>
+        <input type="text" id="s-cai" placeholder="Número CAI del SAR" style="font-family:monospace">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-field">
+          <label>Rango Inicio</label>
+          <input type="text" id="s-rango-ini" placeholder="000-02-01-00000001" style="font-family:monospace">
+        </div>
+        <div class="form-field">
+          <label>Rango Fin</label>
+          <input type="text" id="s-rango-fin" placeholder="000-02-01-00099999" style="font-family:monospace">
+        </div>
+      </div>
+      <div class="form-field">
+        <label>Fecha Límite de Emisión</label>
+        <input type="date" id="s-fecha-limite">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" onclick="closeModal('serie-modal')">Cancelar</button>
+        <button type="button" id="serie-modal-delete" class="btn-danger" style="display:none;background:#dc2626;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit" onclick="eliminarSerie()">🗑️ Eliminar</button>
+        <button type="submit" class="btn-confirm">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- PIE DE PÁGINA — visible siempre, fuera del #app -->
+<footer style="position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#0f172a;border-top:1px solid #1e293b;padding:6px 20px;display:flex;align-items:center;justify-content:center">
+  <span style="font-size:11px;color:#64748b;font-family:'DM Sans',sans-serif;text-align:center;letter-spacing:.2px">
+    &copy; 2026-2027 PetraPOS v7.3 - Software de Facturación e Inventario &nbsp;|&nbsp; Metric Solutions &amp; POS - WhatsApp: +504 9450 2710
+  </span>
+</footer>
+<!-- Overlay para cerrar sidebar en móvil -->
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<script>
+// ── Hamburger / Sidebar drawer ──────────────────────────
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('active');
+  document.body.style.overflow = sb.classList.contains('open') ? 'hidden' : '';
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('active');
+  document.body.style.overflow = '';
+}
+// Cerrar sidebar al navegar en móvil
+const _origShowView = window.showView;
+document.addEventListener('click', function(e) {
+  const navItem = e.target.closest('.nav-item');
+  if (navItem) closeSidebar();
+});
+
+// ── PWA: Service Worker ─────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(r => console.log('SW registrado:', r.scope))
+      .catch(e => console.warn('SW error:', e));
+  });
+}
+
+// ── PWA: Prompt de instalación ──────────────────────────
+let _pwaInstallEvent = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  _pwaInstallEvent = e;
+  // Mostrar banner de instalación si no está instalado
+  const banner = document.getElementById('pwa-install-banner');
+  if (banner) banner.style.display = 'flex';
+});
+window.addEventListener('appinstalled', () => {
+  const banner = document.getElementById('pwa-install-banner');
+  if (banner) banner.style.display = 'none';
+  _pwaInstallEvent = null;
+});
+function installPWA() {
+  if (!_pwaInstallEvent) return;
+  _pwaInstallEvent.prompt();
+  _pwaInstallEvent.userChoice.then(() => { _pwaInstallEvent = null; });
+}
+</script>
+</body>
+</html>
