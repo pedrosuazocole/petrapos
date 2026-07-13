@@ -92,27 +92,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function verificarLicencia() {
-  try {
-    const r = await fetch('/api/licencia/estado');
-    const data = await r.json();
-    const badge = document.getElementById('lic-badge');
-    const inner = document.getElementById('lic-badge-inner');
-    badge.style.display = 'block';
-    if (data.activa) {
-      const tipo = {mensual:'Mensual',trimestral:'Trimestral',anual:'Anual',vitalicia:'Vitalicia'}[data.tipo] || data.tipo;
-      if (data.diasRestantes <= 7) {
-        inner.style.cssText = 'display:inline-block;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa';
-        inner.textContent = `⚠️ Licencia ${tipo} — vence en ${data.diasRestantes} día(s)`;
-      } else {
-        inner.style.cssText = 'display:inline-block;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0';
-        inner.textContent = `✅ Licencia ${tipo} activa — ${data.diasRestantes} días restantes`;
-      }
-    } else {
-      inner.style.cssText = 'display:inline-block;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;background:#fef2f2;color:#991b1b;border:1px solid #fecaca';
-      inner.textContent = '🔒 Sin licencia activa';
-      // Modal automático desactivado — el usuario puede ingresar sin licencia
-    }
-  } catch(e) { /* servidor no disponible */ }
+  // Licencia desactivada en Petra POS — siempre activo
+  const badge = document.getElementById('lic-badge');
+  if (badge) badge.style.display = 'none';
 }
 
 function abrirModalLicencia(cancelable=true) {
