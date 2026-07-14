@@ -120,8 +120,13 @@ function getLicenciaActiva(){
 
 // Endpoint: verificar estado de licencia (público para el frontend antes de login)
 app.get('/api/licencia/estado',(req,res)=>{
-  // Licencia desactivada en Petra POS — siempre activo
-  res.json({activa:true,tipo:'Petra POS',vencimiento:'2099-12-31',diasRestantes:99999});
+  const lic=getLicenciaActiva();
+  if(lic){
+    const diasRestantes=Math.ceil((new Date(lic.fecha_vencimiento)-new Date())/(1000*60*60*24));
+    res.json({activa:true,tipo:lic.tipo,vencimiento:lic.fecha_vencimiento,diasRestantes});
+  } else {
+    res.json({activa:false});
+  }
 });
 
 // Endpoint: activar licencia
@@ -686,7 +691,9 @@ function ajustarStock(pid,sid,qty,tipo,ref,motivo,uid,costo=0,precio=0){
 app.post('/api/auth/login',(req,res)=>{
   const{username,password,sucursal_id}=req.body;
   if(!username||!password)return res.status(400).json({error:'Usuario y contraseña requeridos'});
-  // Licencia desactivada en Petra POS — acceso libre
+  // Verificar licencia activa
+  const lic=getLicenciaActiva();
+  if(!lic)return res.status(403).json({error:'Sistema sin licencia activa. Por favor active una licencia.',sinLicencia:true});
   const u=get(`SELECT * FROM usuarios WHERE username=? AND activo=1`,[username]);
   if(!u||!bcrypt.compareSync(password,u.password))return res.status(401).json({error:'Usuario o contraseña incorrectos'});
   // Para admin: usar la sucursal seleccionada si existe, sino la primera sucursal activa
