@@ -1,33 +1,71 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 48" width="180" height="48">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 64" width="240" height="64">
   <defs>
     <linearGradient id="stoneGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#7C3AED;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#4F46E5;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:#7C3AED"/>
+      <stop offset="100%" style="stop-color:#4F46E5"/>
     </linearGradient>
     <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#A78BFA;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#818CF8;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:#A78BFA"/>
+      <stop offset="100%" style="stop-color:#818CF8"/>
     </linearGradient>
+    <linearGradient id="shadowGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1E1B4B;stop-opacity:0.6"/>
+      <stop offset="100%" style="stop-color:#1E1B4B;stop-opacity:0.2"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
   </defs>
-  <!-- Hexágono/Piedra geométrica -->
-  <g transform="translate(4,4)">
-    <!-- Sombra/profundidad -->
-    <polygon points="20,0 40,8 40,32 20,40 0,32 0,8" fill="#312E81" opacity="0.5" transform="translate(2,3)"/>
-    <!-- Cara principal del hexágono (piedra) -->
-    <polygon points="20,0 40,8 40,32 20,40 0,32 0,8" fill="url(#stoneGrad)"/>
-    <!-- Faceta superior izquierda -->
-    <polygon points="20,0 0,8 20,16" fill="url(#accentGrad)" opacity="0.6"/>
-    <!-- Faceta superior derecha -->
-    <polygon points="20,0 40,8 20,16" fill="#6D28D9" opacity="0.4"/>
+
+  <!-- Hexágono piedra con profundidad 3D -->
+  <g transform="translate(6,6)">
+    <!-- Sombra base -->
+    <polygon points="26,0 52,10 52,42 26,52 0,42 0,10"
+      fill="#1E1B4B" opacity="0.35" transform="translate(3,4)"/>
+    <!-- Cara lateral derecha (profundidad) -->
+    <polygon points="52,10 55,13 55,45 52,42"
+      fill="#312E81" opacity="0.7"/>
+    <!-- Cara lateral izquierda (profundidad) -->
+    <polygon points="0,10 -3,13 -3,45 0,42"
+      fill="#312E81" opacity="0.5"/>
+    <!-- Cara principal -->
+    <polygon points="26,0 52,10 52,42 26,52 0,42 0,10"
+      fill="url(#stoneGrad)"/>
+    <!-- Faceta superior izquierda (iluminada) -->
+    <polygon points="26,0 0,10 26,20"
+      fill="url(#accentGrad)" opacity="0.7"/>
+    <!-- Faceta superior derecha (oscura) -->
+    <polygon points="26,0 52,10 26,20"
+      fill="#6D28D9" opacity="0.5"/>
     <!-- Brillo superior -->
-    <polygon points="20,2 37,9 20,14 3,9" fill="white" opacity="0.12"/>
-    <!-- P central -->
-    <text x="20" y="27" text-anchor="middle" font-family="Arial Black, Arial" font-weight="900" font-size="18" fill="white" letter-spacing="-1">P</text>
+    <polygon points="26,2 48,11 26,17 4,11"
+      fill="white" opacity="0.15"/>
+    <!-- Línea de borde superior -->
+    <polyline points="0,10 26,0 52,10"
+      fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+    <!-- P central con sombra -->
+    <text x="27" y="34" text-anchor="middle"
+      font-family="Arial Black, Arial" font-weight="900"
+      font-size="24" fill="#1E1B4B" opacity="0.3" dx="1" dy="1">P</text>
+    <text x="27" y="34" text-anchor="middle"
+      font-family="Arial Black, Arial" font-weight="900"
+      font-size="24" fill="white" filter="url(#glow)">P</text>
   </g>
+
+  <!-- Separador vertical -->
+  <rect x="74" y="10" width="1.5" height="44" fill="#7C3AED" opacity="0.4" rx="1"/>
+
   <!-- Nombre PETRA -->
-  <text x="54" y="22" font-family="Arial, sans-serif" font-weight="900" font-size="16" fill="white" letter-spacing="2">PETRA</text>
-  <!-- POS subtitle -->
-  <text x="54" y="37" font-family="Arial, sans-serif" font-weight="400" font-size="10" fill="#A78BFA" letter-spacing="4">POS</text>
-  <!-- Línea decorativa -->
-  <rect x="54" y="25" width="70" height="1.5" fill="#7C3AED" opacity="0.5" rx="1"/>
+  <text x="84" y="32"
+    font-family="Arial Black, Arial" font-weight="900"
+    font-size="22" fill="#1E1B4B" letter-spacing="3">PETRA</text>
+
+  <!-- POS con estilo -->
+  <text x="86" y="50"
+    font-family="Arial, sans-serif" font-weight="400"
+    font-size="12" fill="#7C3AED" letter-spacing="7">POS</text>
+
+  <!-- Línea decorativa bajo PETRA -->
+  <rect x="84" y="36" width="130" height="1.5" fill="url(#stoneGrad)" opacity="0.4" rx="1"/>
 </svg>

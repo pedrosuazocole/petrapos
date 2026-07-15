@@ -1,10 +1,10 @@
 // ═══════════════════════════════════════════════════════════════════════════
-// METRIC POS v7.3 (Servicios) — Frontend App (REST API Mode)
+// PETRA POS v2.5 (Servicios) — Frontend App (REST API Mode)
 // ═══════════════════════════════════════════════════════════════════════════
 const API = '';
-let TOKEN = localStorage.getItem('mp_token');
-let USER  = JSON.parse(localStorage.getItem('mp_user')||'null');
-let BRANCH= JSON.parse(localStorage.getItem('mp_branch')||'null');
+let TOKEN = localStorage.getItem('pp_token');
+let USER  = JSON.parse(localStorage.getItem('pp_user')||'null');
+let BRANCH= JSON.parse(localStorage.getItem('pp_branch')||'null');
 
 // ─── API HELPER ──────────────────────────────────────────────────────────────
 async function api(method, path, body) {
@@ -83,72 +83,11 @@ document.addEventListener('DOMContentLoaded', () => {
     showApp();
   } else {
     document.getElementById('login-screen').style.display = 'flex';
-    // Verificar estado de licencia
-    verificarLicencia();
   }
 
   // Cargar sucursales en segundo plano, no bloquea el login
   loadSucursales();
 });
-
-async function verificarLicencia() {
-  try {
-    const r = await fetch('/api/licencia/estado');
-    const data = await r.json();
-    const badge = document.getElementById('lic-badge');
-    const inner = document.getElementById('lic-badge-inner');
-    badge.style.display = 'block';
-    if (data.activa) {
-      const tipo = {mensual:'Mensual',trimestral:'Trimestral',anual:'Anual',vitalicia:'Vitalicia'}[data.tipo] || data.tipo;
-      if (data.diasRestantes <= 7) {
-        inner.style.cssText = 'display:inline-block;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa';
-        inner.textContent = `⚠️ Licencia ${tipo} — vence en ${data.diasRestantes} día(s)`;
-      } else {
-        inner.style.cssText = 'display:inline-block;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0';
-        inner.textContent = `✅ Licencia ${tipo} activa — ${data.diasRestantes} días restantes`;
-      }
-    } else {
-      inner.style.cssText = 'display:inline-block;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;background:#fef2f2;color:#991b1b;border:1px solid #fecaca';
-      inner.textContent = '🔒 Sin licencia activa';
-      // Modal automático desactivado — el usuario puede ingresar sin licencia
-    }
-  } catch(e) { /* servidor no disponible */ }
-}
-
-function abrirModalLicencia(cancelable=true) {
-  document.getElementById('licencia-modal').style.display = 'flex';
-  document.getElementById('lic-cancel-btn').style.display = cancelable ? 'block' : 'none';
-  document.getElementById('lic-clave').value = '';
-  document.getElementById('lic-error').textContent = '';
-  setTimeout(()=>document.getElementById('lic-clave').focus(), 100);
-}
-
-async function activarLicencia() {
-  const clave = document.getElementById('lic-clave').value.trim();
-  const errEl = document.getElementById('lic-error');
-  errEl.textContent = '';
-  if (!clave) { errEl.textContent = 'Ingrese la clave de licencia'; return; }
-  try {
-    const r = await fetch('/api/licencia/activar', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({clave})
-    });
-    const data = await r.json();
-    if (!r.ok) { errEl.textContent = data.error || 'Error al activar'; return; }
-    const tipos = {mensual:'Mensual',trimestral:'Trimestral',anual:'Anual',vitalicia:'Vitalicia'};
-    document.getElementById('licencia-modal').style.display = 'none';
-    // Mostrar confirmación
-    const badge = document.getElementById('lic-badge');
-    const inner = document.getElementById('lic-badge-inner');
-    badge.style.display = 'block';
-    inner.style.cssText = 'display:inline-block;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;background:#f0fdf4;color:#166534;border:1px solid #bbf7d0';
-    inner.textContent = `✅ Licencia ${tipos[data.tipo]||data.tipo} activada — ${data.diasRestantes} días`;
-    alert(`🎉 ¡Licencia activada exitosamente!\n\nTipo: ${tipos[data.tipo]||data.tipo}\nVálida hasta: ${data.vencimiento}`);
-  } catch(e) {
-    errEl.textContent = 'Error de conexión con el servidor';
-  }
-}
 
 async function doLogin() {
   const username = document.getElementById('login-user').value.trim();
@@ -161,9 +100,9 @@ async function doLogin() {
     TOKEN  = r.token;
     USER   = r.user;
     BRANCH = r.sucursal;
-    localStorage.setItem('mp_token', TOKEN);
-    localStorage.setItem('mp_user', JSON.stringify(USER));
-    localStorage.setItem('mp_branch', JSON.stringify(BRANCH));
+    localStorage.setItem('pp_token', TOKEN);
+    localStorage.setItem('pp_user', JSON.stringify(USER));
+    localStorage.setItem('pp_branch', JSON.stringify(BRANCH));
     showApp();
   } catch(e) {
     err.textContent = e.message || 'Error al iniciar sesión';
@@ -172,9 +111,9 @@ async function doLogin() {
 
 function doLogout() {
   TOKEN = null; USER = null; BRANCH = null;
-  localStorage.removeItem('mp_token');
-  localStorage.removeItem('mp_user');
-  localStorage.removeItem('mp_branch');
+  localStorage.removeItem('pp_token');
+  localStorage.removeItem('pp_user');
+  localStorage.removeItem('pp_branch');
   location.reload();
 }
 
@@ -204,6 +143,9 @@ const NAV = [
   { view:'suppliers',    label:'Proveedores',         roles:['admin','supervisor'] },
   { view:'sales',        label:'Ventas',              roles:['admin','supervisor','cajero'] },
   { view:'inventory',    label:'Inventario',          roles:['admin','supervisor'] },
+  { view:'combos',       label:'🧩 Combos',            roles:['admin','supervisor'] },
+  { view:'produccion',   label:'🏭 Producción',        roles:['admin','supervisor'] },
+  { view:'ajustes',      label:'⚖️ Ajustes Inventario', roles:['admin','supervisor'] },
   { view:'kardex',       label:'Kardex / Costos',     roles:['admin','supervisor'] },
   { view:'purchases',    label:'Compras',             roles:['admin','supervisor'] },
   { view:'returns',      label:'Devoluciones',        roles:['admin','supervisor'] },
@@ -264,6 +206,9 @@ function renderView(view) {
     case 'suppliers': renderSuppliers(); break;
     case 'sales':     renderSales(); break;
     case 'inventory': renderInventory(); break;
+    case 'combos':    renderCombos(); break;
+    case 'produccion':renderProduccion(); break;
+    case 'ajustes':   renderAjustesInventario(); break;
     case 'kardex':    renderKardexPage(); break;
     case 'purchases': renderPurchases(); break;
     case 'returns':   renderReturns(); break;
@@ -757,6 +702,370 @@ async function loadKardex() {
       </tr>
     `).join('');
   } catch(e) { alert(e.message); }
+}
+
+// ─── COMBOS / ARTÍCULOS INTEGRADOS ────────────────────────────────────────────
+let combos_cache = [];
+let combosProductosCache = [];
+let comboItemRowSeq = 0;
+
+async function renderCombos() {
+  try { combos_cache = await GET('/combos'); } catch(e) { combos_cache = []; }
+  document.getElementById('combos-count').textContent = combos_cache.length + ' combo(s) configurado(s)';
+  document.getElementById('combos-table-body').innerHTML = combos_cache.map(c => `
+    <tr>
+      <td><span style="font-family:monospace;font-size:11px;color:#94a3b8">${c.codigo}</span></td>
+      <td style="font-weight:600">${c.nombre} <span class="badge" style="background:#eef2ff;color:#4f46e5;font-size:10px;margin-left:4px">🧩 COMBO</span></td>
+      <td><span class="badge badge-blue">${c.categoria||'Combos'}</span></td>
+      <td style="font-size:11px">${(c.items||[]).map(i=>`${i.cantidad}× ${i.componente_nombre}`).join(', ')||'—'}</td>
+      <td style="text-align:right;font-weight:600">${fL(c.precio_venta)}</td>
+      <td style="text-align:right;color:#64748b">${fL(c.costo)}</td>
+      <td style="text-align:center">${c.activo?'<span class="badge badge-green">Activo</span>':'<span class="badge badge-red">Inactivo</span>'}</td>
+      <td style="display:flex;gap:6px">
+        <button class="btn-primary" style="padding:5px 10px;font-size:11px" onclick="openComboModal('${c.id}')">Editar</button>
+        <button class="btn-primary" style="padding:5px 10px;font-size:11px;background:#dc2626" onclick="eliminarCombo('${c.id}')">Eliminar</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:20px">Sin combos configurados aún</td></tr>';
+}
+
+async function openComboModal(id) {
+  if (!combosProductosCache.length) { try { combosProductosCache = await GET('/productos'); } catch(e) { combosProductosCache = []; } }
+  document.getElementById('combo-form').reset();
+  document.getElementById('combo-items-list').innerHTML = '';
+  document.getElementById('combo-id').value = id || '';
+  const combo = id ? combos_cache.find(c => c.id === id) : null;
+  document.getElementById('combo-modal-title').textContent = combo ? 'Editar Combo' : 'Nuevo Combo';
+  document.getElementById('combo-codigo').value = combo ? combo.codigo : '';
+  document.getElementById('combo-codigo').disabled = !!combo;
+  document.getElementById('combo-nombre').value = combo ? combo.nombre : '';
+  document.getElementById('combo-categoria').value = combo ? (combo.categoria||'Combos') : 'Combos';
+  document.getElementById('combo-precio').value = combo ? combo.precio_venta : '';
+  if (combo && combo.items && combo.items.length) {
+    combo.items.forEach(i => agregarComboItemRow(i.componente_id, i.cantidad));
+  } else {
+    agregarComboItemRow(); agregarComboItemRow();
+  }
+  openModal('combo-modal');
+}
+
+function agregarComboItemRow(productoId, cantidad) {
+  const rowId = 'combo-row-' + (comboItemRowSeq++);
+  const opciones = combosProductosCache.filter(p => !p.es_combo)
+    .map(p => `<option value="${p.id}" ${p.id===productoId?'selected':''}>${p.codigo} — ${p.nombre}</option>`).join('');
+  const row = document.createElement('div');
+  row.id = rowId;
+  row.style.cssText = 'display:flex;gap:8px;align-items:center';
+  row.innerHTML = `
+    <select style="flex:1;border:1px solid #e2e8f0;border-radius:8px;padding:7px;font-size:12px;outline:none" class="combo-item-prod">
+      <option value="">— Seleccionar artículo —</option>${opciones}
+    </select>
+    <input type="number" class="combo-item-cant" min="0.01" step="0.01" value="${cantidad||1}" style="width:80px;border:1px solid #e2e8f0;border-radius:8px;padding:7px;font-size:12px;outline:none" placeholder="Cant.">
+    <button type="button" class="btn-primary" style="background:#dc2626;padding:6px 10px;font-size:11px" onclick="document.getElementById('${rowId}').remove()">✕</button>
+  `;
+  document.getElementById('combo-items-list').appendChild(row);
+}
+
+async function saveCombo(e) {
+  e.preventDefault();
+  const items = [...document.querySelectorAll('#combo-items-list > div')].map(row => ({
+    producto_id: row.querySelector('.combo-item-prod').value,
+    cantidad: parseFloat(row.querySelector('.combo-item-cant').value) || 0
+  })).filter(i => i.producto_id && i.cantidad > 0);
+  if (items.length < 2) { alert('Un combo requiere al menos 2 artículos componentes con cantidad válida.'); return; }
+  const id = document.getElementById('combo-id').value;
+  const payload = {
+    codigo: document.getElementById('combo-codigo').value.trim(),
+    nombre: document.getElementById('combo-nombre').value.trim(),
+    categoria: document.getElementById('combo-categoria').value.trim() || 'Combos',
+    precio_venta: parseFloat(document.getElementById('combo-precio').value) || 0,
+    items
+  };
+  try {
+    if (id) await PUT('/combos/'+id, payload);
+    else await POST('/combos', payload);
+    closeModal('combo-modal'); combosProductosCache = []; renderCombos();
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function eliminarCombo(id) {
+  if (!confirm('¿Eliminar este combo? Los artículos componentes no se verán afectados.')) return;
+  try { await DELETE('/combos/'+id); renderCombos(); } catch(e) { alert('Error: ' + e.message); }
+}
+
+// ─── PRODUCCIÓN BÁSICA (Fabricación / Transformación / Ensamble) ─────────────
+let produccion_cache = [];
+let produccionProductosCache = [];
+const PRODUCCION_TIPO_LABEL = {fabricacion:'Fabricación', transformacion:'Transformación', ensamble:'Ensamble'};
+
+async function renderProduccion() {
+  try { produccion_cache = await GET('/produccion', `sucursal_id=${USER.sucursal_id}`); } catch(e) { produccion_cache = []; }
+  document.getElementById('produccion-table-body').innerHTML = produccion_cache.map(p => `
+    <tr>
+      <td style="font-family:monospace;font-size:11px">${p.numero}</td>
+      <td style="font-size:11px">${fDT(p.fecha)}</td>
+      <td><span class="badge badge-blue">${PRODUCCION_TIPO_LABEL[p.tipo]||p.tipo}</span></td>
+      <td style="font-size:11px">${p.notas||'—'}</td>
+      <td style="font-size:11px">${p.usuario_nombre||'—'}</td>
+      <td><button class="btn-primary" style="padding:5px 10px;font-size:11px" onclick="verDetalleProduccion('${p.id}','${p.numero}')">Ver Detalle</button></td>
+    </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:20px">Sin producciones registradas aún</td></tr>';
+}
+
+async function verDetalleProduccion(id, numero) {
+  try {
+    const items = await GET('/produccion/'+id+'/items');
+    const entradas = items.filter(i => i.direccion === 'entrada');
+    const salidas = items.filter(i => i.direccion === 'salida');
+    openPrint(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+      *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}body{font-size:12px;padding:20px}
+      table{width:100%;border-collapse:collapse;margin-top:10px;margin-bottom:20px}
+      th{background:#1e3a5f;color:#fff;padding:7px 8px;font-size:10px}td{padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:11px}
+      h3{color:#1e3a5f;margin-bottom:6px}
+    </style></head><body>
+    <div style="border-bottom:2px solid #1e3a5f;padding-bottom:12px;margin-bottom:14px"><strong style="font-size:18px;color:#1e3a5f">PRODUCCIÓN ${numero}</strong></div>
+    <h3>🔻 Materias Primas (Entradas)</h3>
+    <table><thead><tr><th>Artículo</th><th style="text-align:right">Cantidad</th><th style="text-align:right">Costo Unit.</th></tr></thead>
+    <tbody>${entradas.map(i=>`<tr><td>${i.producto_nombre}</td><td style="text-align:right">${i.cantidad}</td><td style="text-align:right">${fL(i.costo_unit)}</td></tr>`).join('')}</tbody></table>
+    <h3>🔺 Productos Terminados (Salidas)</h3>
+    <table><thead><tr><th>Artículo</th><th style="text-align:right">Cantidad</th><th style="text-align:right">Costo Unit.</th></tr></thead>
+    <tbody>${salidas.map(i=>`<tr><td>${i.producto_nombre}</td><td style="text-align:right">${i.cantidad}</td><td style="text-align:right">${fL(i.costo_unit)}</td></tr>`).join('')}</tbody></table>
+    <div style="margin-top:12px;font-size:10px;color:#94a3b8;text-align:right">Powered by PetraPOS</div>
+    </body></html>`, 'Producción ' + numero);
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+async function openProduccionModal() {
+  if (!produccionProductosCache.length) { try { produccionProductosCache = await GET('/productos'); } catch(e) { produccionProductosCache = []; } }
+  document.getElementById('produccion-form').reset();
+  document.getElementById('produccion-entradas-list').innerHTML = '';
+  document.getElementById('produccion-salidas-list').innerHTML = '';
+  agregarProduccionRow('entrada');
+  agregarProduccionRow('salida');
+  openModal('produccion-modal');
+}
+
+function agregarProduccionRow(direccion) {
+  const listId = direccion === 'entrada' ? 'produccion-entradas-list' : 'produccion-salidas-list';
+  const opciones = produccionProductosCache.filter(p => !p.es_combo)
+    .map(p => `<option value="${p.id}">${p.codigo} — ${p.nombre} (stock: ${p.stock||0})</option>`).join('');
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:8px;align-items:center';
+  row.innerHTML = `
+    <select style="flex:1;border:1px solid #e2e8f0;border-radius:8px;padding:7px;font-size:12px;outline:none" class="produccion-item-prod">
+      <option value="">— Seleccionar artículo —</option>${opciones}
+    </select>
+    <input type="number" class="produccion-item-cant" min="0.01" step="0.01" value="1" style="width:80px;border:1px solid #e2e8f0;border-radius:8px;padding:7px;font-size:12px;outline:none" placeholder="Cant.">
+    <button type="button" class="btn-primary" style="background:#dc2626;padding:6px 10px;font-size:11px" onclick="this.parentElement.remove()">✕</button>
+  `;
+  document.getElementById(listId).appendChild(row);
+}
+
+async function saveProduccion(e) {
+  e.preventDefault();
+  const leer = listId => [...document.querySelectorAll('#'+listId+' > div')].map(row => ({
+    producto_id: row.querySelector('select').value,
+    cantidad: parseFloat(row.querySelector('input').value) || 0
+  })).filter(i => i.producto_id && i.cantidad > 0);
+  const entradas = leer('produccion-entradas-list');
+  const salidas = leer('produccion-salidas-list');
+  if (!entradas.length) { alert('Debe indicar al menos una materia prima de entrada.'); return; }
+  if (!salidas.length) { alert('Debe indicar al menos un producto terminado de salida.'); return; }
+  try {
+    await POST('/produccion', { tipo: document.getElementById('produccion-tipo').value, entradas, salidas, notas: document.getElementById('produccion-notas').value });
+    closeModal('produccion-modal'); produccionProductosCache = []; renderProduccion();
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+// ─── AJUSTES DE INVENTARIO (formal, con consecutivo AJ-000001) ───────────────
+let ajustesInv_cache = [];
+let ajustesInvProductosCache = [];
+
+async function renderAjustesInventario() {
+  try { ajustesInv_cache = await GET('/ajustes-inventario', `sucursal_id=${USER.sucursal_id}`); } catch(e) { ajustesInv_cache = []; }
+  document.getElementById('ajustes-table-body').innerHTML = ajustesInv_cache.map(a => `
+    <tr>
+      <td style="font-family:monospace;font-size:11px">${a.numero}</td>
+      <td style="font-size:11px">${fDT(a.fecha)}</td>
+      <td style="font-weight:600">${a.producto_nombre}</td>
+      <td><span class="kardex-tipo kt-${a.tipo}">${a.tipo}</span></td>
+      <td style="text-align:right;font-weight:600">${a.cantidad}</td>
+      <td style="text-align:right">${a.stock_anterior}</td>
+      <td style="text-align:right;font-weight:600">${a.stock_nuevo}</td>
+      <td style="font-size:11px">${a.motivo||'—'}</td>
+      <td style="font-size:11px">${a.usuario_nombre||'—'}</td>
+    </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:20px">Sin ajustes registrados aún</td></tr>';
+}
+
+async function openAjusteInvModal() {
+  if (!ajustesInvProductosCache.length) { try { ajustesInvProductosCache = await GET('/productos'); } catch(e) { ajustesInvProductosCache = []; } }
+  document.getElementById('ajuste-inv-form').reset();
+  const sel = document.getElementById('ajinv-prod-sel');
+  sel.innerHTML = '<option value="">— Seleccionar artículo —</option>' +
+    ajustesInvProductosCache.filter(p => !p.es_combo).map(p => `<option value="${p.id}" data-stock="${p.stock||0}">${p.codigo} — ${p.nombre}</option>`).join('');
+  document.getElementById('ajinv-stock-actual').textContent = '';
+  toggleAjInvCantidadLabel();
+  openModal('ajuste-inv-modal');
+}
+
+function actualizarStockActualAjInv() {
+  const sel = document.getElementById('ajinv-prod-sel');
+  const opt = sel.options[sel.selectedIndex];
+  document.getElementById('ajinv-stock-actual').textContent = opt && opt.value ? 'Stock actual: ' + (opt.dataset.stock||0) : '';
+}
+
+function toggleAjInvCantidadLabel() {
+  const tipo = document.getElementById('ajinv-tipo').value;
+  document.getElementById('ajinv-cantidad-label').textContent = tipo === 'ajuste' ? 'Nuevo Stock (cantidad final deseada)' : 'Cantidad';
+}
+
+async function saveAjusteInv(e) {
+  e.preventDefault();
+  try {
+    const r = await POST('/ajustes-inventario', {
+      producto_id: document.getElementById('ajinv-prod-sel').value,
+      tipo: document.getElementById('ajinv-tipo').value,
+      cantidad: parseFloat(document.getElementById('ajinv-cantidad').value) || 0,
+      costo: parseFloat(document.getElementById('ajinv-costo').value) || 0,
+      motivo: document.getElementById('ajinv-motivo').value
+    });
+    closeModal('ajuste-inv-modal');
+    ajustesInvProductosCache = [];
+    renderAjustesInventario();
+    alert(`✅ Ajuste ${r.numero} aplicado.\nStock anterior: ${r.stock_anterior} → Stock nuevo: ${r.stock_nuevo}`);
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+// ─── REPORTE DE KARDEX (general, todos los artículos) ────────────────────────
+async function _cargarSelectKardexReporte() {
+  try {
+    const prods = await GET('/inventario', `sucursal_id=${USER.sucursal_id}`);
+    const sel = document.getElementById('rep-kardex-prod');
+    if (sel && sel.options.length <= 1) {
+      sel.innerHTML = '<option value="">Todos los artículos</option>' + prods.map(p => `<option value="${p.id}">${p.codigo} — ${p.nombre}</option>`).join('');
+    }
+  } catch(e) {}
+}
+
+async function reporteKardexGeneral() {
+  await _cargarSelectKardexReporte();
+  const producto_id = document.getElementById('rep-kardex-prod').value;
+  const incluirCostos = document.getElementById('rep-kardex-costos').checked;
+  const ini = document.getElementById('rep-fecha-ini').value;
+  const fin = document.getElementById('rep-fecha-fin').value;
+  let q = `sucursal_id=${USER.sucursal_id}`;
+  if (producto_id) q += `&producto_id=${producto_id}`;
+  if (ini) q += `&fecha_ini=${ini}`;
+  if (fin) q += `&fecha_fin=${fin}`;
+  const rows = await GET('/reportes/kardex', q);
+  const grupos = {};
+  rows.forEach(r => { (grupos[r.producto_id] = grupos[r.producto_id]||{nombre:r.producto_nombre,codigo:r.producto_codigo,rows:[]}).rows.push(r); });
+  const costCols = incluirCostos ? `<th style="text-align:right">Costo</th><th style="text-align:right">Precio</th>` : '';
+  const bodyHtml = Object.values(grupos).map(g => `
+    <div style="margin-top:16px;margin-bottom:4px;font-weight:700;color:#1e3a5f;font-size:12px;background:#f1f5f9;padding:6px 10px;border-radius:6px">${g.codigo} — ${g.nombre}</div>
+    <table><thead><tr><th>Fecha</th><th>Tipo</th><th>Referencia</th><th>Motivo</th><th style="text-align:right">Cant.</th>${costCols}<th style="text-align:right">Saldo</th><th>Usuario</th></tr></thead>
+    <tbody>${g.rows.map(r=>`<tr>
+      <td style="font-size:10px">${fDT(r.fecha)}</td>
+      <td><span class="kardex-tipo kt-${r.tipo}">${r.tipo}</span></td>
+      <td style="font-size:10px;font-family:monospace">${r.referencia||'—'}</td>
+      <td style="font-size:10px">${r.motivo||'—'}</td>
+      <td style="text-align:right;font-weight:600;color:${r.tipo==='venta'||r.tipo==='salida'?'#dc2626':'#16a34a'}">${r.cantidad}</td>
+      ${incluirCostos?`<td style="text-align:right">${fL(r.costo_unit||0)}</td><td style="text-align:right">${fL(r.precio_unit||0)}</td>`:''}
+      <td style="text-align:right;font-weight:600">${r.saldo_stock}</td>
+      <td style="font-size:10px">${r.usuario_nombre||'—'}</td>
+    </tr>`).join('')}</tbody></table>`).join('') || '<p style="color:#94a3b8;margin-top:20px">No hay movimientos para los filtros seleccionados.</p>';
+  openPrint(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}body{font-size:11px;padding:20px}
+    @media print{@page{size:letter landscape;margin:10mm}body{padding:0}}
+    table{width:100%;border-collapse:collapse}th{background:#1e3a5f;color:#fff;padding:6px 8px;font-size:10px}
+    td{padding:5px 8px;border-bottom:1px solid #f1f5f9;font-size:10px}tr:nth-child(even) td{background:#f8fafc}
+    .kardex-tipo{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
+    .kt-entrada,.kt-compra{background:#f0fdf4;color:#16a34a}.kt-salida,.kt-venta{background:#fef2f2;color:#dc2626}
+    .kt-ajuste{background:#eff6ff;color:#2563eb}.kt-devolucion{background:#fffbeb;color:#d97706}
+  </style></head><body>
+  <div style="display:flex;justify-content:space-between;margin-bottom:10px;border-bottom:2px solid #1e3a5f;padding-bottom:12px">
+    <strong style="font-size:18px;color:#1e3a5f">REPORTE DE KARDEX</strong>
+    <span style="color:#64748b;font-size:11px">Período: ${ini?fD(ini):'—'} al ${fin?fD(fin):'—'}</span>
+  </div>
+  ${bodyHtml}
+  <div style="margin-top:16px;font-size:10px;color:#94a3b8;text-align:right">Powered by PetraPOS</div>
+  </body></html>`, 'Reporte de Kardex');
+}
+
+async function descargarKardexExcel() {
+  await _cargarSelectKardexReporte();
+  const producto_id = document.getElementById('rep-kardex-prod').value;
+  const ini = document.getElementById('rep-fecha-ini').value;
+  const fin = document.getElementById('rep-fecha-fin').value;
+  let q = `sucursal_id=${USER.sucursal_id}`;
+  if (producto_id) q += `&producto_id=${producto_id}`;
+  if (ini) q += `&fecha_ini=${ini}`;
+  if (fin) q += `&fecha_fin=${fin}`;
+  const rows = await GET('/reportes/kardex', q);
+  const hdrs = ['Fecha','Código','Artículo','Categoría','Tipo','Referencia','Motivo','Cantidad','Costo Unit.','Precio Unit.','Saldo','Usuario'];
+  const filas = rows.map(r => [fDT(r.fecha), r.producto_codigo, r.producto_nombre, r.producto_categoria||'', r.tipo, r.referencia||'', r.motivo||'', r.cantidad, r.costo_unit||0, r.precio_unit||0, r.saldo_stock, r.usuario_nombre||'']);
+  const ws = XLSX.utils.aoa_to_sheet([hdrs].concat(filas));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Kardex');
+  XLSX.writeFile(wb, 'kardex_' + new Date().toISOString().substring(0,10) + '.xlsx');
+}
+
+// ─── REPORTE DE AJUSTES DE INVENTARIO ────────────────────────────────────────
+async function reporteAjustesInventario() {
+  const ini = document.getElementById('rep-fecha-ini').value;
+  const fin = document.getElementById('rep-fecha-fin').value;
+  let q = `sucursal_id=${USER.sucursal_id}`;
+  if (ini) q += `&fecha_ini=${ini}`;
+  if (fin) q += `&fecha_fin=${fin}`;
+  const rows = await GET('/reportes/ajustes', q);
+  openPrint(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}body{font-size:11px;padding:20px}
+    @media print{@page{size:letter landscape;margin:10mm}body{padding:0}}
+    table{width:100%;border-collapse:collapse;margin-top:14px}th{background:#1e3a5f;color:#fff;padding:7px 8px;font-size:10px}
+    td{padding:6px 8px;border-bottom:1px solid #f1f5f9;font-size:10px}tr:nth-child(even) td{background:#f8fafc}
+    .kardex-tipo{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
+    .kt-entrada{background:#f0fdf4;color:#16a34a}.kt-salida{background:#fef2f2;color:#dc2626}.kt-ajuste{background:#eff6ff;color:#2563eb}
+  </style></head><body>
+  <div style="display:flex;justify-content:space-between;margin-bottom:16px;border-bottom:2px solid #1e3a5f;padding-bottom:12px">
+    <strong style="font-size:18px;color:#1e3a5f">REPORTE DE AJUSTES DE INVENTARIO</strong>
+    <span style="color:#64748b;font-size:11px">Período: ${ini?fD(ini):'—'} al ${fin?fD(fin):'—'}</span>
+  </div>
+  <table><thead><tr><th>N°</th><th>Fecha</th><th>Código</th><th>Artículo</th><th>Tipo</th><th style="text-align:right">Cantidad</th><th style="text-align:right">Stock Ant.</th><th style="text-align:right">Stock Nuevo</th><th>Motivo</th><th>Usuario</th></tr></thead>
+  <tbody>${rows.map(a=>`<tr>
+    <td style="font-family:monospace">${a.numero}</td><td>${fDT(a.fecha)}</td>
+    <td style="font-family:monospace">${a.producto_codigo||'—'}</td><td style="font-weight:600">${a.producto_nombre}</td>
+    <td><span class="kardex-tipo kt-${a.tipo}">${a.tipo}</span></td>
+    <td style="text-align:right;font-weight:600">${a.cantidad}</td>
+    <td style="text-align:right">${a.stock_anterior}</td>
+    <td style="text-align:right;font-weight:600">${a.stock_nuevo}</td>
+    <td>${a.motivo||'—'}</td><td>${a.usuario_nombre||'—'}</td>
+  </tr>`).join('') || '<tr><td colspan="10" style="text-align:center;color:#94a3b8;padding:20px">Sin ajustes en el período seleccionado</td></tr>'}</tbody></table>
+  <div style="margin-top:12px;font-size:10px;color:#94a3b8;text-align:right">Powered by PetraPOS</div>
+  </body></html>`, 'Reporte de Ajustes de Inventario');
+}
+
+async function descargarAjustesExcel() {
+  const ini = document.getElementById('rep-fecha-ini').value;
+  const fin = document.getElementById('rep-fecha-fin').value;
+  let q = `sucursal_id=${USER.sucursal_id}`;
+  if (ini) q += `&fecha_ini=${ini}`;
+  if (fin) q += `&fecha_fin=${fin}`;
+  const rows = await GET('/reportes/ajustes', q);
+  const hdrs = ['N°','Fecha','Código','Artículo','Categoría','Tipo','Cantidad','Stock Anterior','Stock Nuevo','Motivo','Usuario'];
+  const filas = rows.map(a => [a.numero, fDT(a.fecha), a.producto_codigo||'', a.producto_nombre, a.producto_categoria||'', a.tipo, a.cantidad, a.stock_anterior, a.stock_nuevo, a.motivo||'', a.usuario_nombre||'']);
+  const ws = XLSX.utils.aoa_to_sheet([hdrs].concat(filas));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Ajustes');
+  XLSX.writeFile(wb, 'ajustes_inventario_' + new Date().toISOString().substring(0,10) + '.xlsx');
+}
+
+// ─── EXCEL: VALORIZACIÓN DE INVENTARIO ───────────────────────────────────────
+async function descargarValorizacionExcel() {
+  const inv = await GET('/reportes/valorizacion', `sucursal_id=${USER.sucursal_id}`);
+  const hdrs = ['Código','Nombre','Categoría','Stock','Stock Mín.','Costo Unit.','Precio Venta','Valor Costo','Valor Venta','Margen'];
+  const filas = inv.map(p => [p.codigo, p.nombre, p.categoria||'', p.stock||0, p.stock_min||0, p.costo||0, p.precio_venta||0, p.valor_costo||0, p.valor_venta||0, p.margen||0]);
+  const ws = XLSX.utils.aoa_to_sheet([hdrs].concat(filas));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Valorización');
+  XLSX.writeFile(wb, 'valorizacion_inventario_' + new Date().toISOString().substring(0,10) + '.xlsx');
 }
 
 // ─── COMPRAS ─────────────────────────────────────────────────────────────────
@@ -1394,7 +1703,7 @@ async function reporteCorteCaja() {
 <div class="sep"></div>
 ${ventas.slice(0,30).map(s=>`<div style="font-size:10px">${s.numero_factura} | ${(s.cliente_nombre||'').substring(0,14)} | ${fL(s.total)}</div>`).join('')}
 <div class="sep"></div>
-<div class="c" style="font-size:10px">Powered by Petra POS</div>
+<div class="c" style="font-size:10px">Powered by PetraPOS</div>
 <div style="height:10mm"></div></body></html>`, "Corte de Caja");
 }
 
@@ -1416,7 +1725,7 @@ tr:nth-child(even) td{background:#f8fafc}.total-row td{background:#1e3a5f;color:
 <table><thead><tr><th>N° Factura</th><th>Fecha</th><th>Cliente</th><th>RTN</th><th style="text-align:right">Gravado</th><th style="text-align:right">ISV</th><th style="text-align:right">Desc.</th><th style="text-align:right">Total</th></tr></thead>
 <tbody>${sales.map(s=>`<tr><td style="font-family:monospace">${s.numero_factura}</td><td>${fD(s.fecha)}</td><td>${s.cliente_nombre||'—'}</td><td>${s.cliente_rtn||'—'}</td><td style="text-align:right">${fL(s.importe_gravado||0)}</td><td style="text-align:right">${fL(s.isv15||0)}</td><td style="text-align:right">${fL(s.descuento||0)}</td><td style="text-align:right;font-weight:700">${fL(s.total)}</td></tr>`).join('')}</tbody>
 <tfoot><tr class="total-row"><td colspan="4">TOTALES (${sales.length} facturas)</td><td style="text-align:right">${fL(sales.reduce((s,x)=>s+(x.importe_gravado||0),0))}</td><td style="text-align:right">${fL(sales.reduce((s,x)=>s+(x.isv15||0),0))}</td><td style="text-align:right">${fL(sales.reduce((s,x)=>s+(x.descuento||0),0))}</td><td style="text-align:right">${fL(total)}</td></tr></tfoot></table>
-<div style="margin-top:12px;font-size:10px;color:#94a3b8;text-align:right">Powered by Petra POS</div></body></html>`, "Master de Ventas");
+<div style="margin-top:12px;font-size:10px;color:#94a3b8;text-align:right">Powered by PetraPOS</div></body></html>`, "Master de Ventas");
 }
 
 async function reporteVentasCategoria() {
@@ -1433,7 +1742,7 @@ async function reporteVentasCategoria() {
 <table><thead><tr><th>Categoría</th><th style="text-align:right">Unidades</th><th style="text-align:right">Total</th><th style="text-align:right">%</th><th>Barra</th></tr></thead>
 <tbody>${rows.map(r=>`<tr><td style="font-weight:600">${r.categoria||'Sin categoría'}</td><td style="text-align:right">${r.unidades}</td><td style="text-align:right;font-weight:700">${fL(r.total)}</td><td style="text-align:right">${totalGen>0?((r.total/totalGen)*100).toFixed(1)+'%':'0%'}</td><td><div class="bar" style="width:${totalGen>0?Math.round((r.total/totalGen)*100):0}px"></div></td></tr>`).join('')}</tbody>
 <tfoot><tr class="total-row"><td>TOTAL</td><td style="text-align:right">${rows.reduce((s,r)=>s+r.unidades,0)}</td><td style="text-align:right">${fL(totalGen)}</td><td colspan="2"></td></tr></tfoot></table>
-<div style="margin-top:12px;font-size:10px;color:#94a3b8;text-align:right">Powered by Petra POS</div></body></html>`, "Ventas por Categoría");
+<div style="margin-top:12px;font-size:10px;color:#94a3b8;text-align:right">Powered by PetraPOS</div></body></html>`, "Ventas por Categoría");
 }
 
 async function reporteAnalisisMes() {
@@ -1447,7 +1756,7 @@ async function reporteAnalisisMes() {
 <table><thead><tr><th>Mes</th><th style="text-align:right">N° Ventas</th><th style="text-align:right">ISV 15%</th><th style="text-align:right">Total</th><th style="text-align:right">Promedio/Venta</th></tr></thead>
 <tbody>${rows.map(r=>`<tr><td style="font-weight:600">${r.mes}</td><td style="text-align:right">${r.ventas}</td><td style="text-align:right">${fL(r.isv||0)}</td><td style="text-align:right;font-weight:700">${fL(r.total||0)}</td><td style="text-align:right">${fL(r.ventas>0?r.total/r.ventas:0)}</td></tr>`).join('')}</tbody>
 <tfoot><tr class="total-row"><td>TOTAL</td><td style="text-align:right">${rows.reduce((s,r)=>s+r.ventas,0)}</td><td style="text-align:right">${fL(rows.reduce((s,r)=>s+(r.isv||0),0))}</td><td style="text-align:right">${fL(rows.reduce((s,r)=>s+(r.total||0),0))}</td><td></td></tr></tfoot></table>
-<div style="margin-top:12px;font-size:10px;color:#94a3b8;text-align:right">Powered by Petra POS</div></body></html>`, "Análisis de Ventas por Mes");
+<div style="margin-top:12px;font-size:10px;color:#94a3b8;text-align:right">Powered by PetraPOS</div></body></html>`, "Análisis de Ventas por Mes");
 }
 
 async function reporteInventario() {
@@ -1465,7 +1774,7 @@ async function reporteInventario() {
 <tbody>${inv.map(p=>`<tr><td style="font-family:monospace">${p.codigo}</td><td style="font-weight:600">${p.nombre}</td><td>${p.categoria}</td><td style="text-align:right">${p.stock_min||0}</td><td style="text-align:right;${(p.stock||0)<=(p.stock_min||0)?'color:#dc2626;font-weight:700':''}">${p.stock||0}</td><td style="text-align:right;border-bottom:1px solid #999">___</td><td style="text-align:right">${fL(p.precio_venta||0)}</td><td style="text-align:right;font-weight:600">${fL(p.valor_venta||0)}</td></tr>`).join('')}</tbody>
 <tfoot><tr class="total-row"><td colspan="7">VALOR TOTAL DEL INVENTARIO</td><td style="text-align:right">${fL(totalVal)}</td></tr></tfoot></table>
 <div class="firma-row"><div class="firma">Elaborado por</div><div class="firma">Revisado por</div><div class="firma">Autorizado por</div></div>
-<div style="margin-top:20px;font-size:10px;color:#94a3b8;text-align:right">Powered by Petra POS</div></body></html>`, "Inventario Físico");
+<div style="margin-top:20px;font-size:10px;color:#94a3b8;text-align:right">Powered by PetraPOS</div></body></html>`, "Inventario Físico");
 }
 
 async function reporteVentasArticulo() {
@@ -1481,7 +1790,7 @@ async function reporteVentasArticulo() {
 <table><thead><tr><th>Fecha</th><th>Código</th><th>Artículo</th><th>Categoría</th><th style="text-align:right">Unidades</th><th style="text-align:right">Total</th></tr></thead>
 <tbody>${rows.map(r=>`<tr><td>${fD(r.dia)}</td><td style="font-family:monospace">${r.producto_codigo||'—'}</td><td style="font-weight:600">${r.producto_nombre}</td><td>${r.producto_categoria||'—'}</td><td style="text-align:right">${r.unidades}</td><td style="text-align:right;font-weight:700">${fL(r.total)}</td></tr>`).join('')}</tbody>
 <tfoot><tr class="total-row"><td colspan="4">TOTAL</td><td style="text-align:right">${rows.reduce((s,r)=>s+r.unidades,0)}</td><td style="text-align:right">${fL(rows.reduce((s,r)=>s+r.total,0))}</td></tr></tfoot></table>
-<div style="margin-top:12px;font-size:10px;color:#94a3b8;text-align:right">Powered by Petra POS</div></body></html>`, "Ventas de Artículo por Día");
+<div style="margin-top:12px;font-size:10px;color:#94a3b8;text-align:right">Powered by PetraPOS</div></body></html>`, "Ventas de Artículo por Día");
 }
 
 
@@ -1562,7 +1871,7 @@ async function reporteCxC() {
     <div style="border-top:1px solid #333;width:180px;text-align:center;padding-top:4px;font-size:10px">Revisado por</div>
     <div style="border-top:1px solid #333;width:180px;text-align:center;padding-top:4px;font-size:10px">Autorizado por</div>
   </div>
-  <div style="margin-top:12px;font-size:10px;color:#94a3b8;text-align:right">Powered by Petra POS</div>
+  <div style="margin-top:12px;font-size:10px;color:#94a3b8;text-align:right">Powered by PetraPOS</div>
   </body></html>`, "Cuentas por Cobrar");
 }
 
@@ -1648,7 +1957,7 @@ async function reporteCxP() {
     <div style="border-top:1px solid #333;width:180px;text-align:center;padding-top:4px;font-size:10px">Revisado por</div>
     <div style="border-top:1px solid #333;width:180px;text-align:center;padding-top:4px;font-size:10px">Autorizado por</div>
   </div>
-  <div style="margin-top:12px;font-size:10px;color:#94a3b8;text-align:right">Powered by Petra POS</div>
+  <div style="margin-top:12px;font-size:10px;color:#94a3b8;text-align:right">Powered by PetraPOS</div>
   </body></html>`, "Cuentas por Pagar");
 }
 
@@ -1807,7 +2116,7 @@ async function saveConfig(e) {
   try {
     await PUT('/sucursales/' + USER.sucursal_id, data);
     BRANCH = { ...BRANCH, ...data };
-    localStorage.setItem('mp_branch', JSON.stringify(BRANCH));
+    localStorage.setItem('pp_branch', JSON.stringify(BRANCH));
     document.getElementById('top-branch').textContent = BRANCH.nombre;
     document.getElementById('company-name-footer').textContent = BRANCH.nombre;
     toast('config-toast');
@@ -1887,7 +2196,7 @@ td{padding:7px 10px;border-bottom:1px solid #f1f5f9;font-size:12px}
     <div style="font-family:monospace">CAI: ${b.cai||''}</div>
     <div>Rango Autorización: ${b.rango_ini||''} AL ${b.rango_fin||''}</div>
     <div>Fecha Límite de Emisión: ${fD(b.fecha_limite||'')}</div>
-    <div style="margin-top:6px">Copia Cliente / Copia Emisor &nbsp;·&nbsp; <strong>Powered by Petra POS</strong></div>
+    <div style="margin-top:6px">Copia Cliente / Copia Emisor &nbsp;·&nbsp; <strong>Powered by PetraPOS</strong></div>
   </div>
 </div></body></html>`, "Factura");
 }
@@ -1921,7 +2230,7 @@ td{vertical-align:top;padding:1px 0;overflow:hidden}
 .total-line td{font-size:13px;font-weight:700;padding-top:4px}
 </style></head><body>
 ${logoSrc?`<div style="text-align:center;margin-bottom:6px"><img src="${logoSrc}" style="max-width:60mm;max-height:20mm;object-fit:contain"/></div>`:''}
-<div class="c b" style="font-size:12px">${b.nombre||'METRIC POS'}</div>
+<div class="c b" style="font-size:12px">${b.nombre||'PETRA POS'}</div>
 <div class="c" style="font-size:10px">RTN: ${b.rtn||''}</div>
 <div class="c" style="font-size:10px">${b.direccion||''}</div>
 <div class="c" style="font-size:10px">Tel: ${b.telefono||''}</div>
@@ -1955,7 +2264,7 @@ ${sale.formaPago==='efectivo'&&(sale.montoRecibido||0)>0?`<tr><td style="font-si
 <div style="font-size:10px">F.Limite: ${fD(b.fecha_limite||'')}</div>
 <div class="sep"></div>
 <div class="c" style="font-size:10px">Copia Cliente / Copia Emisor</div>
-<div class="c b" style="font-size:10px;margin-top:4px">Powered by Petra POS</div>
+<div class="c b" style="font-size:10px;margin-top:4px">Powered by PetraPOS</div>
 <div style="height:10mm"></div></body></html>`, "Ticket de Venta");
 }
 
@@ -2056,6 +2365,7 @@ function renderFacProductGrid() {
   if (!grid) return;
 
   const esServicio = p => (p.categoria||'').toLowerCase() === 'servicios';
+  const esCombo = p => !!p.es_combo;
 
   let f = products_cache.filter(p =>
     (!q || p.nombre.toLowerCase().includes(q) ||
@@ -2073,18 +2383,21 @@ function renderFacProductGrid() {
         ? `<tr><td colspan="7" style="text-align:center;padding:24px;color:#94a3b8;font-size:13px">Sin resultados para "<b>${q||cat}</b>"</td></tr>`
         : f.map(p => {
             const srv      = esServicio(p);
-            const sinStock = !srv && (p.stock||0) <= 0;
+            const combo    = esCombo(p);
+            const sinStock = !srv && !combo && (p.stock||0) <= 0;
             const isvTag   = !p.gravado || srv
               ? `<span style="background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700">Exento</span>`
               : `<span style="background:#eff6ff;color:#1d4ed8;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700">ISV 15%</span>`;
-            const stkTag   = srv
-              ? `<span style="color:#94a3b8;font-size:11px">Servicio</span>`
-              : sinStock
-                ? `<span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700">Sin stock</span>`
-                : `<span style="background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700">${p.stock} uds</span>`;
+            const stkTag   = combo
+              ? `<span style="background:#eef2ff;color:#4f46e5;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700">🧩 Combo</span>`
+              : srv
+                ? `<span style="color:#94a3b8;font-size:11px">Servicio</span>`
+                : sinStock
+                  ? `<span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700">Sin stock</span>`
+                  : `<span style="background:#f0fdf4;color:#15803d;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700">${p.stock} uds</span>`;
             return `<tr style="border-bottom:1px solid #f1f5f9" onmouseover="this.style.background='#f8faff'" onmouseout="this.style.background=''">
               <td style="padding:9px 12px;font-family:monospace;font-size:12px;color:#64748b">${p.codigo}</td>
-              <td style="padding:9px 12px;font-weight:600;color:#1e3a5f;font-size:13px">${p.nombre}</td>
+              <td style="padding:9px 12px;font-weight:600;color:#1e3a5f;font-size:13px">${p.nombre}${combo?' <span class="badge" style="background:#eef2ff;color:#4f46e5;font-size:9px">🧩 COMBO</span>':''}</td>
               <td style="padding:9px 12px;font-size:12px;color:#64748b">${p.categoria||'—'}</td>
               <td style="padding:9px 12px;text-align:right;font-weight:700;color:#2563eb;font-size:13px">L. ${(p.precio_venta||0).toFixed(2)}</td>
               <td style="padding:9px 12px;text-align:center">${isvTag}</td>
@@ -2104,15 +2417,18 @@ function renderFacProductGrid() {
     grid.style.display = '';
     grid.innerHTML = f.map(p => {
       const srv      = esServicio(p);
-      const sinStock = !srv && (p.stock||0) <= 0;
-      const badge    = srv
-        ? `<span class="badge" style="background:#eff6ff;color:#2563eb;font-size:10px">Servicio · Exento</span>`
-        : sinStock
-          ? `<span class="badge badge-red">Sin stock</span>`
-          : `<span class="badge badge-gray">${p.stock} uds</span>`;
+      const combo    = esCombo(p);
+      const sinStock = !srv && !combo && (p.stock||0) <= 0;
+      const badge    = combo
+        ? `<span class="badge" style="background:#eef2ff;color:#4f46e5">🧩 Combo</span>`
+        : srv
+          ? `<span class="badge" style="background:#eff6ff;color:#2563eb;font-size:10px">Servicio · Exento</span>`
+          : sinStock
+            ? `<span class="badge badge-red">Sin stock</span>`
+            : `<span class="badge badge-gray">${p.stock} uds</span>`;
       return `<button class="product-card" onclick="facAddToCartById('${p.id}')"
         >
-        <div class="prod-code">${p.codigo}</div>
+        <div class="prod-code">${p.codigo}${combo?' <span style="color:#4f46e5">🧩</span>':''}</div>
         <div class="prod-name">${p.nombre}</div>
         <div class="prod-footer">
           <span class="prod-price">L. ${(p.precio_venta||0).toFixed(2)}</span>${badge}
@@ -2485,7 +2801,7 @@ async function reporteConsolidacionBancaria() {
   <table><thead><tr><th>Banco</th><th>N° Cuenta</th><th>Tipo</th><th>Moneda</th><th style="text-align:right">Saldo Inicial</th><th style="text-align:right">Saldo Actual</th></tr></thead>
   <tbody>${(r.bancos||[]).map(b=>`<tr><td style="font-weight:600">${b.nombre}</td><td style="font-family:monospace">${b.numero_cuenta||'—'}</td><td>${b.tipo}</td><td>${b.moneda}</td><td style="text-align:right">L. ${(b.saldo_inicial||0).toFixed(2)}</td><td style="text-align:right;font-weight:700">L. ${(b.saldo_actual||0).toFixed(2)}</td></tr>`).join('')}</tbody>
   <tfoot><tr class="total-row"><td colspan="5">TOTAL CONSOLIDADO</td><td style="text-align:right">L. ${(r.total_consolidado||0).toFixed(2)}</td></tr></tfoot></table>
-  <div style="margin-top:20px;font-size:10px;color:#94a3b8;text-align:right">Powered by Petra POS</div>
+  <div style="margin-top:20px;font-size:10px;color:#94a3b8;text-align:right">Powered by PetraPOS</div>
   </body></html>`, "Consolidación Bancaria");
 }
 
@@ -2692,7 +3008,7 @@ tr:nth-child(even) td{background:#f8fafc}.total-row td{background:#1e3a5f;color:
   <td style="text-align:right">${fL(totDesc)}</td><td style="text-align:right">${fL(totTotal)}</td>
   <td colspan="2"></td>
 </tr></tfoot></table>
-<div style="margin-top:12px;font-size:9px;color:#94a3b8;text-align:right">Powered by Petra POS</div>
+<div style="margin-top:12px;font-size:9px;color:#94a3b8;text-align:right">Powered by PetraPOS</div>
 </body></html>`, "Libro de Ventas Fiscales");
 }
 
@@ -2739,7 +3055,7 @@ tr:nth-child(even) td{background:#f8fafc}.total-row td{background:#1e3a5f;color:
   <td style="text-align:right">${fL(totVenta)}</td>
   <td style="text-align:right">${fL(totMargen)}</td>
 </tr></tfoot></table>
-<div style="margin-top:12px;font-size:10px;color:#94a3b8;text-align:right">Powered by Petra POS</div>
+<div style="margin-top:12px;font-size:10px;color:#94a3b8;text-align:right">Powered by PetraPOS</div>
 </body></html>`, "Valorización de Inventario");
 }
 
@@ -2779,7 +3095,7 @@ table{width:100%;border-collapse:collapse}td{padding:2px 0}td:last-child{text-al
 <div class="sep"></div>
 ${ventas.slice(0,30).map(s=>`<div style="font-size:10px">${s.numero_factura} | ${(s.cliente_nombre||'').substring(0,12)} | ${fL(s.total)}</div>`).join('')}
 <div class="sep"></div>
-<div class="c" style="font-size:10px">Powered by Petra POS</div>
+<div class="c" style="font-size:10px">Powered by PetraPOS</div>
 <div style="height:10mm"></div></body></html>`;
   openPrint(printHTML, "Corte de Caja Detalle");
 }
@@ -2820,7 +3136,7 @@ tr:nth-child(even) td{background:#f8fafc}.total-row td{background:#1e3a5f;color:
 <table><thead><tr><th>N° Factura</th><th>Fecha/Hora</th><th>Cliente</th><th>F.Pago</th><th style="text-align:right">Total</th></tr></thead>
 <tbody>${ventas.map(v=>`<tr><td style="font-family:monospace">${v.numero_factura}</td><td>${fDT(v.fecha)}</td><td>${(v.cliente_nombre||'').substring(0,20)}</td><td>${v.forma_pago||'efectivo'}</td><td style="text-align:right;font-weight:600">${fL(v.total||0)}</td></tr>`).join('')}</tbody>
 <tfoot><tr class="total-row"><td colspan="4">TOTAL (${ventas.length} facturas)</td><td style="text-align:right">${fL(resumen.total||0)}</td></tr></tfoot></table>
-<div style="margin-top:12px;font-size:10px;color:#94a3b8;text-align:right">Powered by Petra POS</div>
+<div style="margin-top:12px;font-size:10px;color:#94a3b8;text-align:right">Powered by PetraPOS</div>
 </body></html>`, "Corte de Caja Carta");
 }
 
@@ -2897,6 +3213,12 @@ function setupEvents() {
   // Ajuste
   _on('ajuste-form', 'submit', saveAjuste);
   _on('ajuste-cancel', 'click', () => closeModal('ajuste-modal'));
+  // Combos
+  _on('combo-form', 'submit', saveCombo);
+  // Producción
+  _on('produccion-form', 'submit', saveProduccion);
+  // Ajustes de Inventario (formal)
+  _on('ajuste-inv-form', 'submit', saveAjusteInv);
   // CxC
   _on('btn-new-cxc', 'click', openCxCModal);
   _on('cxc-form', 'submit', saveCxC);
@@ -2954,7 +3276,7 @@ function setupEvents() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// METRIC POS v7 — FUNCIONES FALTANTES (CORREGIDAS)
+// PETRA POS v2.5 — FUNCIONES FALTANTES (CORREGIDAS)
 // ═══════════════════════════════════════════════════════════════════════════
 
 // ─── openPrint: abre ventana emergente para imprimir ─────────────────────
@@ -3632,7 +3954,7 @@ function descargarPlantilla(tipo) {
 
   // ── Hoja 2: Instrucciones ─────────────────────────────────────────────────
   const instrSheet = [
-    ['PLANTILLA DE IMPORTACIÓN — METRIC POS v7.4'],
+    ['PLANTILLA DE IMPORTACIÓN — PETRA POS v2.5'],
     ['Módulo: ' + tipo.charAt(0).toUpperCase() + tipo.slice(1)],
     ['Generado: ' + new Date().toLocaleDateString('es-HN')],
     [''],
@@ -3990,7 +4312,7 @@ async function imprimirCorte(turnoId) {
     const totT   = arr.reduce((s,v)=>s+(v.forma_pago==='tarjeta'?parseFloat(v.total)||0:0),0);
     const totTr  = arr.reduce((s,v)=>s+(v.forma_pago==='transferencia'?parseFloat(v.total)||0:0),0);
     const fondo  = parseFloat(turno.fondo_inicial||0);
-    const empresa = USER?.empresa || 'METRIC POS';
+    const empresa = USER?.empresa || 'PETRA POS';
 
     const win = window.open('','_blank','width=420,height=700');
     if (!win) return alert('Habilita las ventanas emergentes para imprimir');
@@ -4177,7 +4499,7 @@ function _textoCorte(turno, ventas) {
   const totTransf = arr.reduce((s,v)=>s+(v.forma_pago==='transferencia'?parseFloat(v.total)||0:0),0);
   const fondo     = parseFloat(turno.fondo_inicial||0);
   const esperado  = fondo + totEfect;
-  const empresa   = USER?.empresa || 'METRIC POS';
+  const empresa   = USER?.empresa || 'PETRA POS';
   const sep32     = '================================';
   const sep16     = '--------------------------------';
   function pad(l, r, w) {
@@ -4213,7 +4535,7 @@ function _textoCorte(turno, ventas) {
 // ── Helper: armar texto de artículos vendidos formato ticket ─────────────────
 async function _textoArticulos(turnoId, turno, ventas) {
   const arr = ventas || [];
-  const empresa = USER?.empresa || 'METRIC POS';
+  const empresa = USER?.empresa || 'PETRA POS';
   const W       = 42; // ancho total de línea — más amplio para código+nombre
   const sep     = '='.repeat(W);
   const sep2    = '-'.repeat(W);
@@ -4453,7 +4775,7 @@ function _htmlCortePDF(turno, ventas) {
   const efecEsper  = fondoIni + totEfect;
   const suc = turno.sucursal_nombre || USER?.sucursal || '';
   return `
-    <h2>${USER?.empresa || 'METRIC POS'}</h2>
+    <h2>${USER?.empresa || 'PETRA POS'}</h2>
     <h3>CORTE DE CAJA</h3>
     <p style="text-align:center;color:#64748b;font-size:11px">
       Turno ${turno.turno_letra||'A'} — ${turno.usuario_nombre||'Cajero'}<br>
@@ -4887,7 +5209,7 @@ async function generarConsolidado() {
 function imprimirConsolidado(fecha) {
   const d = window._consolidadoData;
   if (!d) return alert('Primero genera el consolidado.');
-  const emp = USER?.empresa || 'METRIC POS';
+  const emp = USER?.empresa || 'PETRA POS';
   const sep = '================================';
   const sep2= '--------------------------------';
 
@@ -4969,7 +5291,7 @@ async function enviarConsolidadoWA(fecha) {
   const numeros = await GET('/whatsapp').catch(()=>[]);
   if (!numeros.length) return alert('No hay números de WhatsApp configurados.');
 
-  const emp = USER?.empresa || 'METRIC POS';
+  const emp = USER?.empresa || 'PETRA POS';
   const sep = '━━━━━━━━━━━━━━━━━━━━━━';
   const pad = (l,r,w=32) => l + ' '.repeat(Math.max(1,w-l.length-r.length)) + r;
 
@@ -5701,7 +6023,7 @@ async function crearTicketDeTurno(turnoId, turnoLetra, fechaCierre, totalVentas,
     }
     const sep = '================================';
     const pad = (l,r,w=32) => l+' '.repeat(Math.max(1,w-l.length-r.length))+r;
-    const emp = USER?.empresa||'METRIC POS';
+    const emp = USER?.empresa||'PETRA POS';
     let reporte = `${emp}\nARTICULOS VENDIDOS — Turno ${turnoLetra}\n${sep}\n`;
     reporte += pad('ARTICULO','UDS  TOTAL',32)+'\n'+sep.replace(/=/g,'-')+'\n';
     const sorted = Object.entries(articulos).sort((a,b)=>b[1].tot-a[1].tot);
@@ -5983,753 +6305,4 @@ function tkVerFoto(idx, fotos) {
   render();
   document.body.appendChild(modal);
   modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
-}
-
-// ════════════════════════════════════════════════════════════
-// PETRA POS — MÓDULOS ADICIONALES
-// ════════════════════════════════════════════════════════════
-
-// helpers ya definidos en el código base
-
-// ── COMBOS / ARTÍCULOS INTEGRADOS ────────────────────────────────────────────
-async function renderCombos() {
-  const v = document.getElementById('combos-view');
-  if (!v) return;
-  const combos = await GET('/combos').catch(()=>[]);
-  const lista  = document.getElementById('combos-lista');
-  if (!lista) return;
-
-  if (!combos.length) {
-    lista.innerHTML = `<div style="text-align:center;padding:60px;color:#94A3B8">
-      <div style="font-size:48px;margin-bottom:12px">🧩</div>
-      <div style="font-size:16px;font-weight:700;color:#4F46E5">Sin combos creados</div>
-      <div style="font-size:13px;margin-top:6px">Crea tu primer combo para vender paquetes de productos</div>
-    </div>`;
-    return;
-  }
-
-  lista.innerHTML = `<div class="table-wrap">
-    <table>
-      <thead><tr>
-        <th>Código</th><th>Nombre</th><th>Artículos incluidos</th>
-        <th>Precio Venta</th><th>Estado</th><th>Acciones</th>
-      </tr></thead>
-      <tbody>
-        ${combos.map(c=>`<tr>
-          <td><span style="font-family:monospace;font-size:12px;background:#EEF2FF;padding:2px 8px;border-radius:6px;color:#4F46E5">${c.codigo||'—'}</span></td>
-          <td><strong>${c.nombre}</strong></td>
-          <td style="font-size:12px;color:#6B7280;max-width:300px">${c.items_desc||'—'}</td>
-          <td><strong style="color:#4F46E5">${fL(c.precio_venta)}</strong></td>
-          <td><span class="badge ${c.activo?'badge-green':'badge-red'}">${c.activo?'Activo':'Inactivo'}</span></td>
-          <td>
-            <button onclick="editarCombo('${c.id}')" style="background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;margin-right:4px">✏️ Editar</button>
-            <button onclick="eliminarCombo('${c.id}')" style="background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">🗑️</button>
-          </td>
-        </tr>`).join('')}
-      </tbody>
-    </table>
-  </div>`;
-}
-
-async function abrirModalCombo(id) {
-  let combo = null;
-  if (id) { combo = await GET('/combos/'+id).catch(()=>null); }
-  const prods = await GET('/productos').catch(()=>[]);
-
-  const modal = document.createElement('div');
-  modal.className = 'modal-overlay';
-  modal.id = 'combo-modal';
-  modal.innerHTML = `
-    <div class="modal-inner" style="max-width:680px">
-      <div class="modal-header">
-        <div class="modal-title">${id?'✏️ Editar':'🧩 Nuevo'} Combo / Artículo Integrado</div>
-        <button class="btn-close-modal" onclick="document.getElementById('combo-modal').remove()">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-grid" style="margin-bottom:14px">
-          <div class="form-field">
-            <label>Código</label>
-            <input type="text" id="c-codigo" value="${combo?.codigo||''}" placeholder="Ej: COMBO-001">
-          </div>
-          <div class="form-field">
-            <label>Precio de Venta *</label>
-            <input type="number" id="c-precio" value="${combo?.precio_venta||0}" step="0.01" min="0">
-          </div>
-          <div class="form-field span2">
-            <label>Nombre del Combo *</label>
-            <input type="text" id="c-nombre" value="${combo?.nombre||''}" placeholder="Ej: Combo Almuerzo Especial">
-          </div>
-          <div class="form-field span2">
-            <label>Descripción</label>
-            <input type="text" id="c-desc" value="${combo?.descripcion||''}" placeholder="Descripción del combo">
-          </div>
-        </div>
-
-        <div style="font-size:12px;font-weight:700;color:#4F46E5;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">
-          Artículos del Combo
-        </div>
-
-        <!-- Agregar artículo -->
-        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:flex-end">
-          <div class="form-field" style="flex:1">
-            <label>Artículo</label>
-            <select id="c-prod-sel" style="width:100%">
-              <option value="">Selecciona un artículo</option>
-              ${prods.map(p=>`<option value="${p.id}" data-nombre="${p.nombre}" data-precio="${p.precio_venta}">${p.codigo||''} — ${p.nombre} (${fL(p.precio_venta)})</option>`).join('')}
-            </select>
-          </div>
-          <div class="form-field" style="width:100px">
-            <label>Cantidad</label>
-            <input type="number" id="c-prod-qty" value="1" min="0.01" step="0.01">
-          </div>
-          <button onclick="agregarItemCombo()" class="btn-primary" style="flex-shrink:0">+ Agregar</button>
-        </div>
-
-        <div id="combo-items-lista" style="display:flex;flex-direction:column;gap:6px;min-height:40px;background:#F5F3FF;border-radius:10px;padding:10px">
-          <div id="combo-items-empty" style="color:#94A3B8;font-size:13px;text-align:center">Sin artículos agregados</div>
-        </div>
-
-        <div id="combo-total-calc" style="margin-top:10px;text-align:right;font-size:14px;font-weight:700;color:#4F46E5"></div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-cancel" onclick="document.getElementById('combo-modal').remove()">Cancelar</button>
-        <button class="btn-save" onclick="guardarCombo('${id||''}')">💾 Guardar Combo</button>
-      </div>
-    </div>`;
-
-  document.body.appendChild(modal);
-  window._comboItems = combo?.items ? combo.items.map(i=>({producto_id:i.producto_id,nombre:i.producto_nombre,cantidad:i.cantidad,precio:i.precio_venta})) : [];
-  _renderComboItems();
-}
-
-function _renderComboItems() {
-  const cont = document.getElementById('combo-items-lista');
-  const empty = document.getElementById('combo-items-empty');
-  if (!cont) return;
-  if (!window._comboItems?.length) { if(empty)empty.style.display='block'; return; }
-  if(empty)empty.style.display='none';
-  const rows = window._comboItems.map((it,i)=>`
-    <div style="display:flex;align-items:center;gap:10px;background:#fff;border-radius:8px;padding:8px 12px;border:1px solid #E0E7FF">
-      <div style="flex:1;font-size:13px;font-weight:600">${it.nombre}</div>
-      <div style="font-size:12px;color:#6B7280">Qty: <strong>${it.cantidad}</strong></div>
-      <div style="font-size:12px;color:#4F46E5;font-weight:700">${fL((it.precio||0)*it.cantidad)}</div>
-      <button onclick="window._comboItems.splice(${i},1);_renderComboItems()" style="background:none;border:none;cursor:pointer;color:#EF4444;font-size:16px">✕</button>
-    </div>`).join('');
-  cont.innerHTML = rows + (empty?.outerHTML||'');
-  const total = window._comboItems.reduce((s,it)=>s+(parseFloat(it.precio)||0)*it.cantidad,0);
-  const el = document.getElementById('combo-total-calc');
-  if(el) el.textContent = `Costo estimado: ${fL(total)}`;
-}
-
-function agregarItemCombo() {
-  const sel = document.getElementById('c-prod-sel');
-  const qty = parseFloat(document.getElementById('c-prod-qty').value)||1;
-  if (!sel.value) return alert('Selecciona un artículo');
-  const opt = sel.options[sel.selectedIndex];
-  window._comboItems = window._comboItems||[];
-  const existing = window._comboItems.find(x=>x.producto_id===sel.value);
-  if (existing) { existing.cantidad += qty; }
-  else window._comboItems.push({ producto_id:sel.value, nombre:opt.dataset.nombre, cantidad:qty, precio:parseFloat(opt.dataset.precio)||0 });
-  _renderComboItems();
-}
-
-async function guardarCombo(id) {
-  const nombre = document.getElementById('c-nombre').value.trim();
-  if (!nombre) return alert('El nombre es requerido');
-  if (!window._comboItems?.length) return alert('Agrega al menos un artículo al combo');
-  const data = {
-    nombre,
-    codigo: document.getElementById('c-codigo').value.trim(),
-    descripcion: document.getElementById('c-desc').value.trim(),
-    precio_venta: parseFloat(document.getElementById('c-precio').value)||0,
-    items: window._comboItems.map(it=>({producto_id:it.producto_id,cantidad:it.cantidad}))
-  };
-  try {
-    if (id) await fetch('/api/combos/'+id,{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOKEN},body:JSON.stringify(data)}).then(r=>r.json());
-    else await POST('/combos',data);
-    document.getElementById('combo-modal')?.remove();
-    showToastMsg('✅ Combo guardado correctamente');
-    renderCombos();
-  } catch(e){ alert('Error: '+e.message); }
-}
-
-async function editarCombo(id) { abrirModalCombo(id); }
-
-async function eliminarCombo(id) {
-  if (!confirm('¿Eliminar este combo?')) return;
-  await fetch('/api/combos/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+TOKEN}});
-  showToastMsg('🗑️ Combo eliminado');
-  renderCombos();
-}
-
-// ── PRODUCCIÓN BÁSICA ─────────────────────────────────────────────────────────
-async function renderProduccion() {
-  const estado = document.getElementById('prod-filtro-estado')?.value||'';
-  const ini    = document.getElementById('prod-filtro-ini')?.value||'';
-  const fin    = document.getElementById('prod-filtro-fin')?.value||'';
-  let qs = `limite=200`;
-  if (estado) qs+=`&estado=${estado}`;
-  if (ini)    qs+=`&fecha_ini=${ini}`;
-  if (fin)    qs+=`&fecha_fin=${fin}`;
-  const lista = await GET('/producciones',qs).catch(()=>[]);
-  const cont  = document.getElementById('produccion-lista');
-  if (!cont) return;
-
-  const badgeColor = e => e==='procesado'?'badge-green':e==='anulado'?'badge-red':'badge-amber';
-  const tipoLabel  = t => ({fabricacion:'🏭 Fabricación',transformacion:'🔄 Transformación',ensamble:'🔧 Ensamble'}[t]||t);
-
-  cont.innerHTML = !lista.length
-    ? `<div style="text-align:center;padding:60px;color:#94A3B8"><div style="font-size:48px">🏭</div><div style="font-size:16px;font-weight:700;color:#4F46E5;margin-top:12px">Sin producciones registradas</div></div>`
-    : `<div class="table-wrap"><table>
-        <thead><tr><th>N°</th><th>Tipo</th><th>Fecha</th><th>Usuario</th><th>Estado</th><th>Acciones</th></tr></thead>
-        <tbody>
-          ${lista.map(p=>`<tr>
-            <td><strong style="color:#4F46E5;font-family:monospace">${p.numero}</strong></td>
-            <td>${tipoLabel(p.tipo)}</td>
-            <td>${(p.fecha||'').substring(0,16)}</td>
-            <td>${p.usuario_nombre||'—'}</td>
-            <td><span class="badge ${badgeColor(p.estado)}">${p.estado}</span></td>
-            <td>
-              <button onclick="verProduccion('${p.id}')" style="background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;margin-right:4px">👁️ Ver</button>
-              ${p.estado==='borrador'?`<button onclick="procesarProduccion('${p.id}')" style="background:#DCFCE7;color:#15803D;border:1px solid #86EFAC;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">▶️ Procesar</button>`:''}
-            </td>
-          </tr>`).join('')}
-        </tbody>
-      </table></div>`;
-}
-
-async function abrirModalProduccion() {
-  const prods = await GET('/productos').catch(()=>[]);
-  const modal = document.createElement('div');
-  modal.className = 'modal-overlay';
-  modal.id = 'prod-modal';
-  modal.innerHTML = `
-    <div class="modal-inner" style="max-width:780px">
-      <div class="modal-header">
-        <div class="modal-title">🏭 Nueva Producción</div>
-        <button class="btn-close-modal" onclick="document.getElementById('prod-modal').remove()">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-grid" style="margin-bottom:18px">
-          <div class="form-field">
-            <label>Tipo de Producción *</label>
-            <select id="pd-tipo">
-              <option value="fabricacion">🏭 Fabricación</option>
-              <option value="transformacion">🔄 Transformación</option>
-              <option value="ensamble">🔧 Ensamble</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label>Notas / Observaciones</label>
-            <input type="text" id="pd-notas" placeholder="Observaciones opcionales">
-          </div>
-        </div>
-
-        <!-- Materias primas (entradas) -->
-        <div style="font-size:12px;font-weight:700;color:#DC2626;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">⬇️ Entradas (Materias Primas / Insumos)</div>
-        <div style="display:flex;gap:8px;margin-bottom:8px">
-          <select id="pd-entrada-prod" style="flex:1"><option value="">Artículo a consumir</option>${prods.map(p=>`<option value="${p.id}" data-nombre="${p.nombre}" data-costo="${p.costo}">${p.nombre}</option>`).join('')}</select>
-          <input type="number" id="pd-entrada-qty" placeholder="Cantidad" value="1" step="0.01" min="0.01" style="width:100px">
-          <input type="number" id="pd-entrada-costo" placeholder="Costo" value="0" step="0.01" min="0" style="width:100px">
-          <button onclick="_addProdItem('entrada')" class="btn-danger" style="flex-shrink:0">+ Agregar</button>
-        </div>
-        <div id="pd-entradas-lista" style="min-height:40px;background:#FEF2F2;border-radius:10px;padding:10px;margin-bottom:16px;display:flex;flex-direction:column;gap:6px">
-          <div id="pd-ent-empty" style="color:#94A3B8;font-size:13px;text-align:center">Sin entradas</div>
-        </div>
-
-        <!-- Productos terminados (salidas) -->
-        <div style="font-size:12px;font-weight:700;color:#15803D;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">⬆️ Salidas (Productos Terminados)</div>
-        <div style="display:flex;gap:8px;margin-bottom:8px">
-          <select id="pd-salida-prod" style="flex:1"><option value="">Artículo a producir</option>${prods.map(p=>`<option value="${p.id}" data-nombre="${p.nombre}" data-costo="${p.costo}">${p.nombre}</option>`).join('')}</select>
-          <input type="number" id="pd-salida-qty" placeholder="Cantidad" value="1" step="0.01" min="0.01" style="width:100px">
-          <input type="number" id="pd-salida-costo" placeholder="Costo/u" value="0" step="0.01" min="0" style="width:100px">
-          <button onclick="_addProdItem('salida')" class="btn-save" style="flex-shrink:0">+ Agregar</button>
-        </div>
-        <div id="pd-salidas-lista" style="min-height:40px;background:#F0FDF4;border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px">
-          <div id="pd-sal-empty" style="color:#94A3B8;font-size:13px;text-align:center">Sin salidas</div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-cancel" onclick="document.getElementById('prod-modal').remove()">Cancelar</button>
-        <button class="btn-save" onclick="guardarProduccion()">💾 Guardar Borrador</button>
-      </div>
-    </div>`;
-  document.body.appendChild(modal);
-  window._pdEntradas = [];
-  window._pdSalidas  = [];
-}
-
-function _addProdItem(tipo) {
-  const sel   = document.getElementById(`pd-${tipo}-prod`);
-  const qty   = parseFloat(document.getElementById(`pd-${tipo}-qty`).value)||1;
-  const costo = parseFloat(document.getElementById(`pd-${tipo}-costo`).value)||0;
-  if (!sel.value) return alert('Selecciona un artículo');
-  const opt = sel.options[sel.selectedIndex];
-  const arr = tipo==='entrada'?window._pdEntradas:window._pdSalidas;
-  arr.push({producto_id:sel.value,producto_nombre:opt.dataset.nombre,cantidad:qty,costo_unit:costo});
-  _renderPdLista(tipo);
-}
-
-function _renderPdLista(tipo) {
-  const arr  = tipo==='entrada'?window._pdEntradas:window._pdSalidas;
-  const cont = document.getElementById(`pd-${tipo}s-lista`);
-  const empty= document.getElementById(`pd-${tipo==='entrada'?'ent':'sal'}-empty`);
-  if (!cont) return;
-  if(!arr.length){if(empty)empty.style.display='block';return;}
-  if(empty)empty.style.display='none';
-  cont.innerHTML = arr.map((it,i)=>`
-    <div style="display:flex;align-items:center;gap:8px;background:#fff;border-radius:8px;padding:7px 12px;border:1px solid #E2E8F0">
-      <div style="flex:1;font-size:13px;font-weight:600">${it.producto_nombre}</div>
-      <div style="font-size:12px;color:#6B7280">Qty: <strong>${it.cantidad}</strong></div>
-      <div style="font-size:12px;color:#6B7280">Costo: ${fL(it.costo_unit)}</div>
-      <button onclick="window._pd${tipo==='entrada'?'Entradas':'Salidas'}.splice(${i},1);_renderPdLista('${tipo}')" style="background:none;border:none;cursor:pointer;color:#EF4444;font-size:16px">✕</button>
-    </div>`).join('') + (empty?.outerHTML||'');
-}
-
-async function guardarProduccion() {
-  if (!window._pdEntradas?.length && !window._pdSalidas?.length) return alert('Agrega al menos un artículo de entrada o salida');
-  const data = {
-    tipo: document.getElementById('pd-tipo').value,
-    notas: document.getElementById('pd-notas').value.trim(),
-    entradas: window._pdEntradas||[],
-    salidas:  window._pdSalidas||[]
-  };
-  try {
-    const r = await POST('/producciones',data);
-    document.getElementById('prod-modal')?.remove();
-    showToastMsg(`✅ Producción ${r.numero} guardada como borrador`);
-    renderProduccion();
-  } catch(e){ alert('Error: '+e.message); }
-}
-
-async function procesarProduccion(id) {
-  if (!confirm('¿Procesar esta producción? Se actualizará el inventario automáticamente.')) return;
-  try {
-    await fetch('/api/producciones/'+id+'/procesar',{method:'PUT',headers:{'Authorization':'Bearer '+TOKEN}}).then(r=>r.json());
-    showToastMsg('✅ Producción procesada — inventario actualizado');
-    renderProduccion();
-  } catch(e){ alert('Error: '+e.message); }
-}
-
-async function verProduccion(id) {
-  const prod = await GET('/producciones/'+id).catch(()=>null);
-  if (!prod) return;
-  const modal = document.createElement('div');
-  modal.className='modal-overlay';
-  modal.innerHTML=`
-    <div class="modal-inner" style="max-width:680px">
-      <div class="modal-header">
-        <div class="modal-title">🏭 Producción ${prod.numero}</div>
-        <button class="btn-close-modal" onclick="this.closest('.modal-overlay').remove()">✕</button>
-      </div>
-      <div class="modal-body">
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
-          <div><div style="font-size:10px;color:#6B7280;font-weight:700">TIPO</div><div style="font-weight:700">${prod.tipo}</div></div>
-          <div><div style="font-size:10px;color:#6B7280;font-weight:700">ESTADO</div><div><span class="badge ${prod.estado==='procesado'?'badge-green':prod.estado==='anulado'?'badge-red':'badge-amber'}">${prod.estado}</span></div></div>
-          <div><div style="font-size:10px;color:#6B7280;font-weight:700">FECHA</div><div style="font-weight:700">${(prod.fecha||'').substring(0,16)}</div></div>
-        </div>
-        <div style="font-size:12px;font-weight:700;color:#DC2626;margin-bottom:8px">⬇️ ENTRADAS (Insumos consumidos)</div>
-        ${prod.entradas?.length?`<div class="table-wrap" style="margin-bottom:14px"><table><thead><tr><th>Artículo</th><th>Cantidad</th><th>Costo/u</th></tr></thead><tbody>${prod.entradas.map(e=>`<tr><td>${e.producto_nombre}</td><td>${e.cantidad}</td><td>${fL(e.costo_unit)}</td></tr>`).join('')}</tbody></table></div>`:'<p style="color:#94A3B8;font-size:13px;margin-bottom:14px">Sin entradas</p>'}
-        <div style="font-size:12px;font-weight:700;color:#15803D;margin-bottom:8px">⬆️ SALIDAS (Productos terminados)</div>
-        ${prod.salidas?.length?`<div class="table-wrap"><table><thead><tr><th>Artículo</th><th>Cantidad</th><th>Costo/u</th></tr></thead><tbody>${prod.salidas.map(s=>`<tr><td>${s.producto_nombre}</td><td>${s.cantidad}</td><td>${fL(s.costo_unit)}</td></tr>`).join('')}</tbody></table></div>`:'<p style="color:#94A3B8;font-size:13px">Sin salidas</p>'}
-      </div>
-    </div>`;
-  document.body.appendChild(modal);
-}
-
-// ── AJUSTES DE INVENTARIO ─────────────────────────────────────────────────────
-async function renderAjustes() {
-  const tipo = document.getElementById('aj-filtro-tipo')?.value||'';
-  const ini  = document.getElementById('aj-filtro-ini')?.value||'';
-  const fin  = document.getElementById('aj-filtro-fin')?.value||'';
-  let qs='limite=300';
-  if(tipo)qs+=`&tipo=${tipo}`;
-  if(ini) qs+=`&fecha_ini=${ini}`;
-  if(fin) qs+=`&fecha_fin=${fin}`;
-  const lista = await GET('/ajustes',qs).catch(()=>[]);
-  const cont  = document.getElementById('ajustes-lista');
-  if(!cont)return;
-  const tipoIcon = t=>({entrada:'⬆️',salida:'⬇️',ajuste:'⚖️'}[t]||'⚖️');
-  cont.innerHTML = !lista.length
-    ? `<div style="text-align:center;padding:60px;color:#94A3B8"><div style="font-size:48px">⚖️</div><div style="font-size:16px;font-weight:700;color:#4F46E5;margin-top:12px">Sin ajustes registrados</div></div>`
-    : `<div class="table-wrap"><table>
-        <thead><tr><th>N°</th><th>Tipo</th><th>Motivo</th><th>Fecha</th><th>Usuario</th><th>Acciones</th></tr></thead>
-        <tbody>
-          ${lista.map(a=>`<tr>
-            <td><strong style="font-family:monospace;color:#4F46E5">${a.numero}</strong></td>
-            <td>${tipoIcon(a.tipo)} ${a.tipo}</td>
-            <td style="max-width:200px;font-size:12px">${a.motivo||'—'}</td>
-            <td>${(a.fecha||'').substring(0,16)}</td>
-            <td>${a.usuario_nombre||'—'}</td>
-            <td><button onclick="verAjuste('${a.id}')" style="background:#EEF2FF;color:#4F46E5;border:1px solid #C7D2FE;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">👁️ Ver</button></td>
-          </tr>`).join('')}
-        </tbody>
-      </table></div>`;
-}
-
-async function abrirModalAjuste() {
-  const prods = await GET('/productos').catch(()=>[]);
-  const sucursales = await GET('/sucursales').catch(()=>[]);
-  const modal = document.createElement('div');
-  modal.className='modal-overlay';
-  modal.id='ajuste-modal';
-  modal.innerHTML=`
-    <div class="modal-inner" style="max-width:780px">
-      <div class="modal-header">
-        <div class="modal-title">⚖️ Nuevo Ajuste de Inventario</div>
-        <button class="btn-close-modal" onclick="document.getElementById('ajuste-modal').remove()">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-grid" style="margin-bottom:16px">
-          <div class="form-field">
-            <label>Tipo de Ajuste *</label>
-            <select id="aj-tipo">
-              <option value="entrada">⬆️ Entrada (suma stock)</option>
-              <option value="salida">⬇️ Salida (resta stock)</option>
-              <option value="ajuste">⚖️ Ajuste Directo (fija stock)</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label>Sucursal / Almacén *</label>
-            <select id="aj-sucursal">${sucursales.map(s=>`<option value="${s.id}">${s.nombre}</option>`).join('')}</select>
-          </div>
-          <div class="form-field span2">
-            <label>Motivo del Ajuste *</label>
-            <input type="text" id="aj-motivo" placeholder="Ej: Inventario físico, Merma, Corrección de conteo...">
-          </div>
-        </div>
-        <div style="font-size:12px;font-weight:700;color:#4F46E5;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Artículos a Ajustar</div>
-        <div style="display:flex;gap:8px;margin-bottom:10px">
-          <select id="aj-prod-sel" style="flex:1"><option value="">Selecciona artículo</option>${prods.map(p=>`<option value="${p.id}" data-nombre="${p.nombre}" data-codigo="${p.codigo||''}" data-costo="${p.costo||0}">${p.codigo?p.codigo+' — ':''} ${p.nombre}</option>`).join('')}</select>
-          <input type="number" id="aj-cantidad" placeholder="Cantidad" value="1" min="0.01" step="0.01" style="width:110px">
-          <input type="number" id="aj-costo"    placeholder="Costo/u"  value="0"  min="0"    step="0.01" style="width:110px">
-          <button onclick="_addAjusteItem()" class="btn-primary" style="flex-shrink:0">+ Agregar</button>
-        </div>
-        <div id="ajuste-items-lista" style="min-height:60px;background:#F5F3FF;border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px">
-          <div id="aj-items-empty" style="color:#94A3B8;font-size:13px;text-align:center">Sin artículos agregados</div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-cancel" onclick="document.getElementById('ajuste-modal').remove()">Cancelar</button>
-        <button class="btn-save" onclick="guardarAjuste()">💾 Aplicar Ajuste</button>
-      </div>
-    </div>`;
-  document.body.appendChild(modal);
-  window._ajItems=[];
-}
-
-function _addAjusteItem() {
-  const sel  = document.getElementById('aj-prod-sel');
-  const qty  = parseFloat(document.getElementById('aj-cantidad').value)||1;
-  const cost = parseFloat(document.getElementById('aj-costo').value)||0;
-  if(!sel.value) return alert('Selecciona un artículo');
-  const opt = sel.options[sel.selectedIndex];
-  window._ajItems = window._ajItems||[];
-  window._ajItems.push({producto_id:sel.value,producto_nombre:opt.dataset.nombre,producto_codigo:opt.dataset.codigo,cantidad_ajuste:qty,costo_unit:cost});
-  const cont=document.getElementById('ajuste-items-lista');
-  const empty=document.getElementById('aj-items-empty');
-  if(empty)empty.style.display='none';
-  cont.innerHTML=window._ajItems.map((it,i)=>`
-    <div style="display:flex;align-items:center;gap:8px;background:#fff;border-radius:8px;padding:7px 12px;border:1px solid #E0E7FF">
-      <div style="flex:1;font-size:13px;font-weight:600">${it.producto_codigo?`<span style='font-family:monospace;font-size:11px;background:#EEF2FF;padding:1px 6px;border-radius:4px'>${it.producto_codigo}</span> `:''}${it.producto_nombre}</div>
-      <div style="font-size:12px;color:#6B7280">Cantidad: <strong>${it.cantidad_ajuste}</strong></div>
-      <div style="font-size:12px;color:#4F46E5">Costo: ${fL(it.costo_unit)}</div>
-      <button onclick="window._ajItems.splice(${i},1);_reRenderAjItems()" style="background:none;border:none;cursor:pointer;color:#EF4444;font-size:16px">✕</button>
-    </div>`).join('') + `<div id="aj-items-empty" style="display:none"></div>`;
-}
-
-function _reRenderAjItems() {
-  const cont=document.getElementById('ajuste-items-lista');
-  if(!cont)return;
-  if(!window._ajItems?.length){cont.innerHTML='<div id="aj-items-empty" style="color:#94A3B8;font-size:13px;text-align:center">Sin artículos agregados</div>';return;}
-  cont.innerHTML=window._ajItems.map((it,i)=>`
-    <div style="display:flex;align-items:center;gap:8px;background:#fff;border-radius:8px;padding:7px 12px;border:1px solid #E0E7FF">
-      <div style="flex:1;font-size:13px;font-weight:600">${it.producto_nombre}</div>
-      <div style="font-size:12px;color:#6B7280">Cantidad: <strong>${it.cantidad_ajuste}</strong></div>
-      <button onclick="window._ajItems.splice(${i},1);_reRenderAjItems()" style="background:none;border:none;cursor:pointer;color:#EF4444;font-size:16px">✕</button>
-    </div>`).join('');
-}
-
-async function guardarAjuste() {
-  if(!window._ajItems?.length) return alert('Agrega al menos un artículo');
-  const motivo=document.getElementById('aj-motivo').value.trim();
-  if(!motivo) return alert('El motivo es requerido');
-  const data={tipo:document.getElementById('aj-tipo').value,motivo,sucursal_id:document.getElementById('aj-sucursal').value,items:window._ajItems};
-  try {
-    const r=await POST('/ajustes',data);
-    document.getElementById('ajuste-modal')?.remove();
-    showToastMsg(`✅ Ajuste ${r.numero} aplicado — inventario actualizado`);
-    renderAjustes();
-  } catch(e){alert('Error: '+e.message);}
-}
-
-async function verAjuste(id) {
-  const aj=await GET('/ajustes/'+id).catch(()=>null);
-  if(!aj)return;
-  const modal=document.createElement('div');
-  modal.className='modal-overlay';
-  modal.innerHTML=`
-    <div class="modal-inner" style="max-width:680px">
-      <div class="modal-header">
-        <div class="modal-title">⚖️ Ajuste ${aj.numero}</div>
-        <button class="btn-close-modal" onclick="this.closest('.modal-overlay').remove()">✕</button>
-      </div>
-      <div class="modal-body">
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
-          <div><div style="font-size:10px;color:#6B7280;font-weight:700">TIPO</div><div style="font-weight:700">${aj.tipo}</div></div>
-          <div><div style="font-size:10px;color:#6B7280;font-weight:700">FECHA</div><div style="font-weight:700">${(aj.fecha||'').substring(0,16)}</div></div>
-          <div><div style="font-size:10px;color:#6B7280;font-weight:700">USUARIO</div><div style="font-weight:700">${aj.usuario_nombre||'—'}</div></div>
-        </div>
-        <div style="background:#F5F3FF;border-radius:8px;padding:10px;margin-bottom:14px;font-size:13px"><strong>Motivo:</strong> ${aj.motivo||'—'}</div>
-        <div class="table-wrap"><table>
-          <thead><tr><th>Código</th><th>Artículo</th><th>Stock Antes</th><th>Ajuste</th><th>Stock Nuevo</th></tr></thead>
-          <tbody>
-            ${(aj.items||[]).map(it=>`<tr>
-              <td style="font-family:monospace;font-size:11px">${it.producto_codigo||'—'}</td>
-              <td>${it.producto_nombre}</td>
-              <td style="text-align:center">${it.cantidad_anterior}</td>
-              <td style="text-align:center;font-weight:700;color:${aj.tipo==='entrada'?'#15803D':aj.tipo==='salida'?'#DC2626':'#4F46E5'}">${aj.tipo==='entrada'?'+':aj.tipo==='salida'?'-':'='}${it.cantidad_ajuste}</td>
-              <td style="text-align:center;font-weight:800;color:#4F46E5">${it.cantidad_nueva}</td>
-            </tr>`).join('')}
-          </tbody>
-        </table></div>
-      </div>
-    </div>`;
-  document.body.appendChild(modal);
-}
-
-// ── REPORTE KARDEX ────────────────────────────────────────────────────────────
-function renderRepKardex() {
-  const finEl = document.getElementById('kx-fin');
-  if (finEl && !finEl.value) finEl.value = today();
-  // Poblar sucursales
-  GET('/sucursales').then(ss=>{
-    const sel=document.getElementById('kx-sucursal');
-    if(sel) sel.innerHTML='<option value="">Todos</option>'+ss.map(s=>`<option value="${s.id}">${s.nombre}</option>`).join('');
-  });
-}
-
-let _kxProductoId = '';
-async function buscarProductoKardex(txt) {
-  _kxProductoId='';
-  document.getElementById('kx-producto-id').value='';
-  if(txt.length<2)return;
-  const prods = await GET('/productos',`search=${encodeURIComponent(txt)}`).catch(()=>[]);
-  // Simple: solo tomar el primero que coincida
-  const found = prods.find(p=>p.nombre.toLowerCase().includes(txt.toLowerCase())||p.codigo?.toLowerCase().includes(txt.toLowerCase()));
-  if(found){ _kxProductoId=found.id; document.getElementById('kx-producto-id').value=found.id; document.getElementById('kx-producto-txt').value=found.nombre; }
-}
-
-async function consultarKardex() {
-  const ini  = document.getElementById('kx-ini').value;
-  const fin  = document.getElementById('kx-fin').value;
-  const pid  = document.getElementById('kx-producto-id').value;
-  const suc  = document.getElementById('kx-sucursal').value;
-  const costos = document.getElementById('kx-incluir-costos').checked;
-  const precios= document.getElementById('kx-incluir-precios').checked;
-  let qs='';
-  if(ini)qs+=`fecha_ini=${ini}&`;
-  if(fin)qs+=`fecha_fin=${fin}&`;
-  if(pid)qs+=`producto_id=${pid}&`;
-  if(suc)qs+=`sucursal_id=${suc}`;
-  const rows=await GET('/reportes/kardex',qs).catch(()=>[]);
-  const cont=document.getElementById('kardex-resultado');
-  if(!cont)return;
-
-  if(!rows.length){cont.innerHTML='<div style="text-align:center;padding:40px;color:#94A3B8">Sin movimientos en el período seleccionado</div>';return;}
-
-  // Agrupar por producto
-  const grupos={};
-  rows.forEach(r=>{
-    const k=r.producto_id;
-    if(!grupos[k])grupos[k]={nombre:r.producto_nombre,codigo:r.producto_codigo,mvs:[]};
-    grupos[k].mvs.push(r);
-  });
-
-  cont.innerHTML = Object.values(grupos).map(g=>`
-    <div style="margin-bottom:20px">
-      <div style="background:linear-gradient(90deg,var(--sidebar-bg),var(--accent));color:#fff;padding:10px 16px;border-radius:10px 10px 0 0;display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <span style="font-family:monospace;font-size:11px;background:rgba(255,255,255,.15);padding:2px 8px;border-radius:4px">${g.codigo||'S/C'}</span>
-          <strong style="margin-left:10px">${g.nombre}</strong>
-        </div>
-        <span style="font-size:11px;opacity:.7">${g.mvs.length} movimientos</span>
-      </div>
-      <div class="table-wrap" style="border-radius:0 0 10px 10px">
-        <table>
-          <thead><tr>
-            <th>Fecha</th><th>Tipo</th><th>Cantidad</th><th>Saldo</th><th>Referencia</th><th>Motivo</th>
-            ${costos?'<th>Costo/u</th>':''}${precios?'<th>Precio/u</th>':''}
-          </tr></thead>
-          <tbody>
-            ${g.mvs.map(m=>`<tr>
-              <td>${(m.fecha||'').substring(0,16)}</td>
-              <td><span class="badge ${m.tipo==='entrada'?'badge-green':'badge-red'}">${m.tipo==='entrada'?'⬆️ Entrada':'⬇️ Salida'}</span></td>
-              <td style="text-align:center;font-weight:700">${m.cantidad}</td>
-              <td style="text-align:center;font-weight:800;color:#4F46E5">${m.saldo_stock}</td>
-              <td style="font-size:12px;font-family:monospace">${m.referencia||'—'}</td>
-              <td style="font-size:12px">${m.motivo||'—'}</td>
-              ${costos?`<td>${fL(m.costo_unit)}</td>`:''}
-              ${precios?`<td>${fL(m.precio_unit)}</td>`:''}
-            </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>`).join('');
-}
-
-function imprimirKardex() {
-  const html=document.getElementById('kardex-resultado')?.innerHTML||'';
-  const ini=document.getElementById('kx-ini').value;
-  const fin=document.getElementById('kx-fin').value;
-  const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><title>Kardex</title><style>body{font-family:Arial,sans-serif;font-size:11px;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:5px}th{background:#1E1B4B;color:#fff}@media print{button{display:none}}</style></head><body>
-    <h2 style="color:#1E1B4B">Petra POS — Consulta de Kardex</h2>
-    <p>Período: ${ini} al ${fin}</p>
-    ${html}
-    <script>window.print()<\/script></body></html>`);
-}
-
-async function excelKardex() {
-  const ini=document.getElementById('kx-ini').value;
-  const fin=document.getElementById('kx-fin').value;
-  const pid=document.getElementById('kx-producto-id').value;
-  const rows=await GET('/reportes/kardex',`fecha_ini=${ini}&fecha_fin=${fin}${pid?'&producto_id='+pid:''}`).catch(()=>[]);
-  const data=[['Fecha','Producto','Código','Tipo','Cantidad','Saldo','Referencia','Motivo','Costo/u']];
-  rows.forEach(r=>data.push([(r.fecha||'').substring(0,16),r.producto_nombre,r.producto_codigo||'',r.tipo,r.cantidad,r.saldo_stock,r.referencia||'',r.motivo||'',parseFloat(r.costo_unit)||0]));
-  xlsxDownload(data,'Kardex_'+ini+'_'+fin);
-}
-
-// ── INVENTARIO VALORIZADO ─────────────────────────────────────────────────────
-function renderRepValorizado() {
-  GET('/sucursales').then(ss=>{
-    const sel=document.getElementById('val-sucursal');
-    if(sel)sel.innerHTML='<option value="">Todas</option>'+ss.map(s=>`<option value="${s.id}">${s.nombre}</option>`).join('');
-  });
-}
-
-async function consultarValorizado() {
-  const suc=document.getElementById('val-sucursal')?.value||'';
-  const {rows,totales}=await GET('/reportes/inventario_valorizado',suc?`sucursal_id=${suc}`:'').catch(()=>({rows:[],totales:{}}));
-  const cont=document.getElementById('valorizado-resultado');
-  if(!cont)return;
-  if(!rows?.length){cont.innerHTML='<div style="text-align:center;padding:40px;color:#94A3B8">Sin datos de inventario</div>';return;}
-
-  cont.innerHTML=`
-    <!-- Totales resumen -->
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
-      ${[
-        ['📦 Total Artículos',totales.total_items,'#4F46E5'],
-        ['🔢 Unidades en Stock',totales.stock_total,'#7C3AED'],
-        ['💲 Valor al Costo',fL(totales.valor_costo),'#DC2626'],
-        ['💰 Valor de Venta',fL(totales.valor_venta),'#15803D'],
-      ].map(([l,v,c])=>`<div class="kpi-card" style="text-align:center">
-        <div style="font-size:11px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.5px">${l}</div>
-        <div style="font-size:20px;font-weight:900;color:${c};margin-top:6px">${v}</div>
-      </div>`).join('')}
-    </div>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Código</th><th>Artículo</th><th>Categoría</th><th style="text-align:center">Stock</th><th style="text-align:right">Costo/u</th><th style="text-align:right">Valor Costo</th><th style="text-align:right">Precio/u</th><th style="text-align:right">Valor Venta</th></tr></thead>
-      <tbody>
-        ${rows.map(r=>`<tr>
-          <td style="font-family:monospace;font-size:11px">${r.codigo||'—'}</td>
-          <td><strong>${r.nombre}</strong></td>
-          <td><span class="badge badge-purple" style="font-size:10px">${r.categoria||'Sin categoría'}</span></td>
-          <td style="text-align:center;font-weight:800;color:${r.stock<=0?'#DC2626':r.stock<5?'#D97706':'#15803D'}">${r.stock}</td>
-          <td style="text-align:right">${fL(r.costo)}</td>
-          <td style="text-align:right;font-weight:700;color:#DC2626">${fL(r.valor_total)}</td>
-          <td style="text-align:right">${fL(r.precio_venta)}</td>
-          <td style="text-align:right;font-weight:700;color:#15803D">${fL(r.valor_venta)}</td>
-        </tr>`).join('')}
-      </tbody>
-      <tfoot><tr style="background:#F5F3FF;font-weight:900">
-        <td colspan="3" style="padding:10px 14px">TOTALES</td>
-        <td style="text-align:center">${totales.stock_total}</td>
-        <td></td>
-        <td style="text-align:right;color:#DC2626">${fL(totales.valor_costo)}</td>
-        <td></td>
-        <td style="text-align:right;color:#15803D">${fL(totales.valor_venta)}</td>
-      </tr></tfoot>
-    </table></div>`;
-}
-
-function imprimirValorizado() {
-  const html=document.getElementById('valorizado-resultado')?.innerHTML||'';
-  const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><title>Inventario Valorizado</title><style>body{font-family:Arial,sans-serif;font-size:11px;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:5px}th{background:#1E1B4B;color:#fff}tfoot tr{background:#EEF2FF;font-weight:bold}@media print{button{display:none}}</style></head><body>
-    <h2 style="color:#1E1B4B">Petra POS — Reporte Valorizado de Inventario</h2>
-    <p>Generado: ${new Date().toLocaleString('es-HN')}</p>
-    ${html}
-    <script>window.print()<\/script></body></html>`);
-}
-
-async function excelValorizado() {
-  const suc=document.getElementById('val-sucursal')?.value||'';
-  const {rows}=await GET('/reportes/inventario_valorizado',suc?`sucursal_id=${suc}`:'').catch(()=>({rows:[]}));
-  const data=[['Código','Artículo','Categoría','Stock','Costo/u','Valor Costo','Precio/u','Valor Venta']];
-  rows.forEach(r=>data.push([r.codigo||'',r.nombre,r.categoria||'',r.stock,r.costo||0,r.valor_total||0,r.precio_venta||0,r.valor_venta||0]));
-  xlsxDownload(data,'Inventario_Valorizado');
-}
-
-// ── REPORTE AJUSTES ───────────────────────────────────────────────────────────
-function renderRepAjustesView() {
-  const iniEl=document.getElementById('raj-ini');
-  const finEl=document.getElementById('raj-fin');
-  const hoy=today();
-  if(iniEl&&!iniEl.value){const d=new Date(hoy);d.setDate(1);iniEl.value=d.toISOString().substring(0,10);}
-  if(finEl&&!finEl.value)finEl.value=hoy;
-}
-
-async function consultarRepAjustes() {
-  const ini=document.getElementById('raj-ini').value;
-  const fin=document.getElementById('raj-fin').value;
-  const tipo=document.getElementById('raj-tipo').value;
-  let qs='';
-  if(ini)qs+=`fecha_ini=${ini}&`;
-  if(fin)qs+=`fecha_fin=${fin}&`;
-  if(tipo)qs+=`tipo=${tipo}`;
-  const rows=await GET('/reportes/ajustes',qs).catch(()=>[]);
-  const cont=document.getElementById('rep-ajustes-resultado');
-  if(!cont)return;
-  if(!rows.length){cont.innerHTML='<div style="text-align:center;padding:40px;color:#94A3B8">Sin ajustes en el período</div>';return;}
-  const tipoColor=t=>t==='entrada'?'badge-green':t==='salida'?'badge-red':'badge-blue';
-  cont.innerHTML=`<div class="table-wrap"><table>
-    <thead><tr><th>N° Ajuste</th><th>Fecha</th><th>Tipo</th><th>Código Art.</th><th>Artículo</th><th>Stock Antes</th><th>Ajuste</th><th>Stock Nuevo</th><th>Motivo</th><th>Usuario</th></tr></thead>
-    <tbody>
-      ${rows.map(r=>`<tr>
-        <td style="font-family:monospace;color:#4F46E5;font-size:11px">${r.numero}</td>
-        <td style="font-size:12px">${(r.fecha||'').substring(0,16)}</td>
-        <td><span class="badge ${tipoColor(r.tipo)}">${r.tipo}</span></td>
-        <td style="font-family:monospace;font-size:11px">${r.producto_codigo||'—'}</td>
-        <td>${r.producto_nombre}</td>
-        <td style="text-align:center">${r.cantidad_anterior}</td>
-        <td style="text-align:center;font-weight:800;color:${r.tipo==='entrada'?'#15803D':r.tipo==='salida'?'#DC2626':'#4F46E5'}">${r.tipo==='entrada'?'+':r.tipo==='salida'?'-':'='}${r.cantidad_ajuste}</td>
-        <td style="text-align:center;font-weight:800;color:#4F46E5">${r.cantidad_nueva}</td>
-        <td style="font-size:12px">${r.motivo||'—'}</td>
-        <td style="font-size:12px">${r.usuario_nombre||'—'}</td>
-      </tr>`).join('')}
-    </tbody>
-  </table></div>`;
-}
-
-function imprimirRepAjustes() {
-  const html=document.getElementById('rep-ajustes-resultado')?.innerHTML||'';
-  const ini=document.getElementById('raj-ini').value;
-  const fin=document.getElementById('raj-fin').value;
-  const w=window.open('','_blank');
-  w.document.write(`<!DOCTYPE html><html><head><title>Ajustes de Inventario</title><style>body{font-family:Arial,sans-serif;font-size:10px;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:4px}th{background:#1E1B4B;color:#fff}@media print{button{display:none}}</style></head><body>
-    <h2 style="color:#1E1B4B">Petra POS — Reporte de Ajustes de Inventario</h2>
-    <p>Período: ${ini} al ${fin}</p>${html}<script>window.print()<\/script></body></html>`);
-}
-
-async function excelRepAjustes() {
-  const ini=document.getElementById('raj-ini').value;
-  const fin=document.getElementById('raj-fin').value;
-  const tipo=document.getElementById('raj-tipo').value;
-  let qs=`fecha_ini=${ini}&fecha_fin=${fin}`;
-  if(tipo)qs+=`&tipo=${tipo}`;
-  const rows=await GET('/reportes/ajustes',qs).catch(()=>[]);
-  const data=[['N° Ajuste','Fecha','Tipo','Código','Artículo','Stock Antes','Ajuste','Stock Nuevo','Motivo','Usuario']];
-  rows.forEach(r=>data.push([r.numero,(r.fecha||'').substring(0,16),r.tipo,r.producto_codigo||'',r.producto_nombre,r.cantidad_anterior,r.cantidad_ajuste,r.cantidad_nueva,r.motivo||'',r.usuario_nombre||'']));
-  xlsxDownload(data,'Ajustes_Inventario_'+ini);
 }

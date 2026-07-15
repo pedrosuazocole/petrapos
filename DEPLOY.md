@@ -1,4 +1,4 @@
-# MetricPOS v7.3 — Guía de Despliegue en Producción
+# PetraPOS v7.3 — Guía de Despliegue en Producción
 
 ---
 
@@ -10,8 +10,8 @@
    ```bash
    git init
    git add .
-   git commit -m "MetricPOS v7.3"
-   git remote add origin https://github.com/tu-usuario/metricpos-buenosaires.git
+   git commit -m "PetraPOS v7.3"
+   git remote add origin https://github.com/tu-usuario/petrapos-buenosaires.git
    git push -u origin main
    ```
 
@@ -60,10 +60,10 @@ sudo usermod -aG docker $USER
 sudo apt install docker-compose-plugin -y
 
 # 3. Subir los archivos al VPS
-scp -r metricposbuenosaires/ usuario@tu-vps:/opt/metricpos/
+scp -r petraposbuenosaires/ usuario@tu-vps:/opt/petrapos/
 
 # 4. Configurar variables de entorno
-cd /opt/metricpos/metricposbuenosaires
+cd /opt/petrapos/petraposbuenosaires
 cp .env.example .env
 nano .env   # Editar JWT_SECRET, SERVER_URL, etc.
 
@@ -71,7 +71,7 @@ nano .env   # Editar JWT_SECRET, SERVER_URL, etc.
 docker compose up -d --build
 
 # 6. Verificar que funciona
-curl http://localhost:3000/api/licencia/estado
+curl http://localhost:3000/api/health
 ```
 
 ### Nginx + SSL (HTTPS gratuito con Certbot)
@@ -81,10 +81,10 @@ curl http://localhost:3000/api/licencia/estado
 sudo apt install nginx certbot python3-certbot-nginx -y
 
 # 2. Copiar configuración
-sudo cp nginx.conf /etc/nginx/sites-available/metricpos
+sudo cp nginx.conf /etc/nginx/sites-available/petrapos
 # Editar "tu-dominio.com" en el archivo
-sudo nano /etc/nginx/sites-available/metricpos
-sudo ln -s /etc/nginx/sites-available/metricpos /etc/nginx/sites-enabled/
+sudo nano /etc/nginx/sites-available/petrapos
+sudo ln -s /etc/nginx/sites-available/petrapos /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 
 # 3. Generar certificado SSL gratuito
@@ -104,10 +104,10 @@ docker compose up -d
 
 ```bash
 # 1. Subir archivos
-scp -r metricposbuenosaires/ usuario@tu-vps:/opt/metricpos/
+scp -r petraposbuenosaires/ usuario@tu-vps:/opt/petrapos/
 
 # 2. Instalar dependencias
-cd /opt/metricpos/metricposbuenosaires
+cd /opt/petrapos/petraposbuenosaires
 npm install --omit=dev
 
 # 3. Configurar variables
@@ -116,7 +116,7 @@ nano .env
 
 # 4. Instalar PM2 y arrancar
 npm install -g pm2
-pm2 start server.js --name metricpos-buenosaires
+pm2 start server.js --name petrapos-buenosaires
 pm2 save
 pm2 startup   # Auto-inicio en boot
 
@@ -129,7 +129,7 @@ pm2 startup   # Auto-inicio en boot
 
 ```bash
 # Verificar que responde
-curl https://tu-dominio.com/api/licencia/estado
+curl https://tu-dominio.com/api/health
 
 # Ver logs (Railway)
 railway logs
@@ -138,7 +138,7 @@ railway logs
 docker compose logs -f
 
 # Ver logs (PM2)
-pm2 logs metricpos-buenosaires
+pm2 logs petrapos-buenosaires
 ```
 
 ---
@@ -157,14 +157,14 @@ pm2 logs metricpos-buenosaires
 
 **Docker:**
 ```bash
-docker cp metricpos-buenosaires:/datos/metricpos/metricpos.db ./backup-$(date +%Y%m%d).db
+docker cp petrapos-buenosaires:/datos/petrapos/petrapos.db ./backup-$(date +%Y%m%d).db
 ```
 
 **PM2:**
 ```bash
-cp /opt/metricpos/metricposbuenosaires/data/metricpos.db ./backup-$(date +%Y%m%d).db
+cp /opt/petrapos/petraposbuenosaires/data/petrapos.db ./backup-$(date +%Y%m%d).db
 ```
 
 ---
 
-*MetricPOS v7.3 — Inversiones Buenos Aires S.A.*
+*PetraPOS v7.3 — Inversiones Buenos Aires S.A.*

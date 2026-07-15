@@ -7,29 +7,25 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="PetraPOS">
-  <meta name="theme-color" content="#4F46E5">
-  <meta name="description" content="Petra POS — Sistema de Punto de Venta Honduras">
+  <meta name="theme-color" content="#1e3a5f">
+  <meta name="description" content="Sistema de Punto de Venta — Inversiones Buenos Aires">
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icon-192.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
-  <title>Petra POS v1.0</title>
+  <title>Petra POS v2.5</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <style>
-    #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1E1B4B 0%,#312E81 50%,#4F46E5 100%);padding:20px;position:relative;overflow:hidden}
-    #login-screen::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;background:rgba(124,58,237,.15);top:-200px;right:-200px;pointer-events:none}
-    #login-screen::after{content:'';position:absolute;width:400px;height:400px;border-radius:50%;background:rgba(99,102,241,.1);bottom:-100px;left:-100px;pointer-events:none}
-    .login-card{background:#fff;border-radius:20px;padding:40px 36px;width:100%;max-width:420px;box-shadow:0 24px 64px rgba(30,27,75,.4);position:relative;z-index:1}
-    .login-logo-wrap{text-align:center;margin-bottom:24px}
-    .login-logo-wrap img{max-width:160px;max-height:60px;object-fit:contain}
-    .login-title{font-size:20px;font-weight:800;color:#1E1B4B;text-align:center;margin-bottom:4px;font-family:'DM Sans',sans-serif}
-    .login-sub{font-size:12px;color:#94a3b8;text-align:center;margin-bottom:28px;letter-spacing:1px;text-transform:uppercase}
+    #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);padding:20px}
+    .login-card{background:#fff;border-radius:16px;padding:40px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+    .login-title{font-size:22px;font-weight:700;color:#1e3a5f;text-align:center;margin-bottom:4px}
+    .login-sub{font-size:13px;color:#94a3b8;text-align:center;margin-bottom:28px}
     .login-field{margin-bottom:16px}
-    .login-field label{display:block;font-size:11px;font-weight:700;color:#475569;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
-    .login-field input,.login-field select{width:100%;border:1.5px solid #E0E7FF;border-radius:10px;padding:10px 14px;font-size:14px;outline:none;transition:border-color .15s,box-shadow .15s;font-family:inherit;box-sizing:border-box;color:#1E1B4B}
-    .login-field input:focus,.login-field select:focus{border-color:#4F46E5;box-shadow:0 0 0 3px rgba(99,102,241,.15)}
-    .login-btn{width:100%;padding:13px;background:linear-gradient(135deg,#7C3AED,#4F46E5);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px;box-shadow:0 4px 16px rgba(124,58,237,.35);transition:transform .15s,box-shadow .15s}
-    .login-btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(124,58,237,.45)}
+    .login-field label{display:block;font-size:12px;font-weight:600;color:#475569;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+    .login-field input,.login-field select{width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;font-size:14px;outline:none;transition:border-color .15s;font-family:inherit;box-sizing:border-box}
+    .login-field input:focus,.login-field select:focus{border-color:#2563eb}
+    .login-btn{width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px}
+    .login-btn:hover{background:#1d4ed8}
     .login-error{color:#dc2626;font-size:12px;text-align:center;margin-top:8px;min-height:18px}
     #topbar{display:flex;align-items:center;justify-content:space-between;padding:0 20px;height:52px;background:#fff;border-bottom:1px solid #e2e8f0;flex-shrink:0;gap:12px}
     .topbar-branch{font-size:12px;font-weight:600;color:#64748b;background:#f1f5f9;padding:4px 10px;border-radius:6px}
@@ -63,91 +59,14 @@
   <button onclick="this.parentElement.style.display='none'" style="background:rgba(255,255,255,.15);
     border:none;border-radius:8px;color:#fff;padding:7px 10px;font-size:12px;cursor:pointer">✕</button>
 </div>
-<!-- LICENCIA MODAL -->
-<div id="licencia-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center">
-  <div style="background:#fff;border-radius:16px;padding:36px;width:100%;max-width:440px;box-shadow:0 24px 64px rgba(0,0,0,0.4);margin:20px">
-    <div style="text-align:center;margin-bottom:20px">
-      <div style="font-size:40px">🔑</div>
-      <div style="font-size:20px;font-weight:800;color:#1e3a5f;margin-top:8px">Activar Licencia</div>
-      <div style="font-size:13px;color:#64748b;margin-top:4px">Ingrese su clave de licencia para continuar</div>
-    </div>
-    <div style="margin-bottom:16px">
-      <label style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Clave de Licencia</label>
-      <input id="lic-clave" type="text" placeholder="MPOS-MEN-XXXX-XXXX-XXXX" autocomplete="off"
-        style="width:100%;border:2px solid #e2e8f0;border-radius:8px;padding:11px 14px;font-size:14px;font-family:monospace;outline:none;box-sizing:border-box;text-transform:uppercase;letter-spacing:1px"
-        oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')activarLicencia()">
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
-      <div style="background:#f1f5f9;border-radius:8px;padding:10px;text-align:center">
-        <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase">Mensual</div>
-        <div style="font-size:12px;color:#334155;margin-top:2px">30 días</div>
-      </div>
-      <div style="background:#f1f5f9;border-radius:8px;padding:10px;text-align:center">
-        <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase">Trimestral</div>
-        <div style="font-size:12px;color:#334155;margin-top:2px">90 días</div>
-      </div>
-      <div style="background:#f1f5f9;border-radius:8px;padding:10px;text-align:center">
-        <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase">Anual</div>
-        <div style="font-size:12px;color:#334155;margin-top:2px">365 días</div>
-      </div>
-      <div style="background:#f1f5f9;border-radius:8px;padding:10px;text-align:center">
-        <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase">Vitalicia</div>
-        <div style="font-size:12px;color:#334155;margin-top:2px">De por vida</div>
-      </div>
-    </div>
-    <div id="lic-error" style="color:#dc2626;font-size:12px;text-align:center;min-height:18px;margin-bottom:10px"></div>
-    <button onclick="activarLicencia()" style="width:100%;padding:13px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit">
-      ✅ Activar Sistema
-    </button>
-    <button onclick="document.getElementById('licencia-modal').style.display='none'" id="lic-cancel-btn"
-      style="width:100%;padding:10px;background:transparent;color:#64748b;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;margin-top:8px;display:none">
-      Cancelar
-    </button>
-  </div>
-</div>
-
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="login-card">
-    <!-- Logo Petra POS -->
-    <div class="login-logo-wrap">
-      <img src="/logo-petra.svg" alt="Petra POS">
-    </div>
-    <div class="login-title">Bienvenido a Petra POS</div>
-    <div class="login-sub">Sistema de Punto de Venta</div>
-    <!-- Badge estado licencia -->
-    <div id="lic-badge" style="display:none;text-align:center;margin-bottom:16px">
-      <span id="lic-badge-inner" style="display:inline-block;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px"></span>
-    </div>
-    <div class="login-field">
-      <label>Sucursal</label>
-      <select id="login-suc"></select>
-    </div>
-    <div class="login-field">
-      <label>Usuario</label>
-      <input type="text" id="login-user" placeholder="admin" autocomplete="username">
-    </div>
-    <div class="login-field">
-      <label>Contraseña</label>
-      <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password">
-    </div>
-    <button class="login-btn" id="login-btn">→ INICIAR SESIÓN</button>
-    <div class="login-error" id="login-error"></div>
-    <div style="text-align:center;margin-top:14px">
-      <button onclick="abrirModalLicencia(true)" style="background:none;border:none;color:#7C3AED;font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline">🔑 Activar / Cambiar Licencia</button>
-    </div>
-  </div>
-</div><div id="login-screen">
-  <div class="login-card">
     <div style="text-align:center;margin-bottom:24px">
-      
+      <img src="/logo-petra.svg" alt="Petra POS" style="max-height:80px;max-width:260px;object-fit:contain;display:block;margin:0 auto"/>
     </div>
-    
-    <div class="login-sub">v1.0 · Honduras</div>
-    <!-- Badge estado licencia -->
-    <div id="lic-badge" style="display:none;text-align:center;margin-bottom:16px">
-      <span id="lic-badge-inner" style="display:inline-block;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px"></span>
-    </div>
+    <div class="login-title">Iniciar Sesión</div>
+    <div class="login-sub">Version 2.5</div>
     <div class="login-field">
       <label>Sucursal</label>
       <select id="login-suc"></select>
@@ -162,9 +81,6 @@
     </div>
     <button class="login-btn" id="login-btn">Ingresar al Sistema</button>
     <div class="login-error" id="login-error"></div>
-    <div style="text-align:center;margin-top:14px">
-      <button onclick="abrirModalLicencia(true)" style="background:none;border:none;color:#2563eb;font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline">🔑 Activar / Cambiar Licencia</button>
-    </div>
   </div>
 </div>
 
@@ -180,20 +96,20 @@
           <rect x="2" y="15" width="18" height="2" rx="1" fill="#1e3a5f"/>
         </svg>
       </button>
-      
+      <img src="/logo-petra.svg" alt="Petra POS" style="height:34px;object-fit:contain;display:block"/>
       <span class="topbar-branch" id="top-branch">—</span>
     </div>
     <div style="display:flex;align-items:center;gap:10px">
       <style>@keyframes turno-pulse{0%,100%{opacity:1}50%{opacity:.4}}</style>
       <span class="topbar-role" id="top-role">—</span>
       <span style="font-size:12px;color:#64748b" id="top-user">—</span>
-      <span style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.5px;background:#f1f5f9;padding:3px 8px;border-radius:6px;border:1px solid #e2e8f0">v7.3</span>
+      <span style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:.5px;background:#f1f5f9;padding:3px 8px;border-radius:6px;border:1px solid #e2e8f0">v2.5</span>
       <button class="btn-logout" onclick="doLogout()">Cerrar sesión</button>
     </div>
   </div>
   <div style="display:flex;flex:1;overflow:hidden">
     <aside id="sidebar">
-      <div id="sidebar-logo"><img src="/logo-petra.svg" alt="Petra POS" style="max-width:150px;max-height:56px"></div>
+      <div id="sidebar-logo"><img id="sidebar-logo-img" src="/logo-petra.svg" alt="PetraPOS" onerror="this.style.display='none'"/></div>
       <nav id="nav-menu"></nav>
       <div id="sidebar-footer">
         <div class="company-name" id="company-name-footer"></div>
@@ -283,7 +199,7 @@
               <!-- Título -->
               <div style="flex-shrink:0">
                 <div style="font-size:15px;font-weight:800;color:#1e3a5f;letter-spacing:-.3px">📄 Facturación</div>
-                <div style="font-size:10px;color:#94a3b8;margin-top:1px">v7.3 Servicios · Carta SAR</div>
+                <div style="font-size:10px;color:#94a3b8;margin-top:1px">v2.5 Servicios · Carta SAR</div>
               </div>
               <!-- Buscador grande -->
               <div style="flex:1;min-width:200px;position:relative">
@@ -519,6 +435,27 @@
           <div class="data-table"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Referencia</th><th>Motivo</th><th style="text-align:right">Cant.</th><th style="text-align:right">Costo</th><th style="text-align:right">Precio</th><th style="text-align:right">Saldo</th><th>Usuario</th></tr></thead><tbody id="kardex-table-body"></tbody></table></div>
         </div>
       </div>
+      <!-- COMBOS -->
+      <div id="combos-view" class="view">
+        <div class="page">
+          <div class="page-header"><div><div class="page-title">🧩 Combos / Artículos Integrados</div><div class="page-subtitle" id="combos-count"></div></div><button class="btn-primary" onclick="openComboModal()">+ Nuevo Combo</button></div>
+          <div class="data-table"><table><thead><tr><th>Código</th><th>Nombre</th><th>Categoría</th><th>Componentes</th><th style="text-align:right">Precio Venta</th><th style="text-align:right">Costo</th><th style="text-align:center">Estado</th><th></th></tr></thead><tbody id="combos-table-body"></tbody></table></div>
+        </div>
+      </div>
+      <!-- PRODUCCIÓN -->
+      <div id="produccion-view" class="view">
+        <div class="page">
+          <div class="page-header"><div><div class="page-title">🏭 Producción Básica</div><div class="page-subtitle" id="produccion-count">Fabricación · Transformación · Ensamble</div></div><button class="btn-primary" onclick="openProduccionModal()">+ Nueva Producción</button></div>
+          <div class="data-table"><table><thead><tr><th>N°</th><th>Fecha</th><th>Tipo</th><th>Notas</th><th>Usuario</th><th></th></tr></thead><tbody id="produccion-table-body"></tbody></table></div>
+        </div>
+      </div>
+      <!-- AJUSTES DE INVENTARIO -->
+      <div id="ajustes-view" class="view">
+        <div class="page">
+          <div class="page-header"><div><div class="page-title">⚖️ Ajustes de Inventario</div><div class="page-subtitle" id="ajustes-count">Entradas, salidas y ajustes directos de stock</div></div><button class="btn-primary" onclick="openAjusteInvModal()">+ Nuevo Ajuste</button></div>
+          <div class="data-table"><table><thead><tr><th>N°</th><th>Fecha</th><th>Artículo</th><th>Tipo</th><th style="text-align:right">Cant.</th><th style="text-align:right">Stock Ant.</th><th style="text-align:right">Stock Nuevo</th><th>Motivo</th><th>Usuario</th></tr></thead><tbody id="ajustes-table-body"></tbody></table></div>
+        </div>
+      </div>
       <!-- COMPRAS -->
       <div id="purchases-view" class="view">
         <div class="page">
@@ -576,8 +513,14 @@
             <div class="report-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:40px;height:40px;background:#eff6ff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">📋</div><div><div style="font-weight:700;color:#1e293b">Master de Ventas</div><div style="font-size:11px;color:#94a3b8">Carta · Apaisado</div></div></div><div style="font-size:12px;color:#64748b;margin-bottom:14px">Detalle completo de facturas con RTN, importes gravados e ISV.</div><button class="btn-primary" style="width:100%;justify-content:center" onclick="reporteMasterVentas()">🖨️ Generar</button></div>
             <div class="report-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:40px;height:40px;background:#fdf4ff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">📊</div><div><div style="font-weight:700;color:#1e293b">Ventas por Categoría</div><div style="font-size:11px;color:#94a3b8">Carta</div></div></div><div style="font-size:12px;color:#64748b;margin-bottom:14px">Ventas agrupadas por categoría con unidades y participación %.</div><button class="btn-primary" style="width:100%;justify-content:center" onclick="reporteVentasCategoria()">🖨️ Generar</button></div>
             <div class="report-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:40px;height:40px;background:#fefce8;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">📅</div><div><div style="font-weight:700;color:#1e293b">Análisis por Mes</div><div style="font-size:11px;color:#94a3b8">Carta</div></div></div><div style="font-size:12px;color:#64748b;margin-bottom:14px">Totales mensuales, ISV recaudado y promedio por transacción.</div><button class="btn-primary" style="width:100%;justify-content:center" onclick="reporteAnalisisMes()">🖨️ Generar</button></div>
+            <div class="report-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:40px;height:40px;background:#ecfdf5;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">💹</div><div><div style="font-weight:700;color:#1e293b">Valorización Inventario</div><div style="font-size:11px;color:#94a3b8">Carta · Apaisado</div></div></div><div style="font-size:12px;color:#64748b;margin-bottom:14px">Valor del inventario a costo, a precio de venta y margen potencial por artículo y categoría.</div><div style="display:flex;gap:8px"><button class="btn-primary" style="flex:1;justify-content:center" onclick="reporteValorizacion()">🖨️ Imprimir</button><button class="btn-primary" style="flex:1;justify-content:center;background:#059669" onclick="descargarValorizacionExcel()">📊 Excel</button></div></div>
+            <div class="report-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:40px;height:40px;background:#eef2ff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">📋</div><div><div style="font-weight:700;color:#1e293b">Reporte de Kardex</div><div style="font-size:11px;color:#94a3b8">Carta · Apaisado</div></div></div><div style="font-size:12px;color:#64748b;margin-bottom:14px">Historial de movimientos por artículo, sucursal y rango de fechas, con costos y precios.</div>
+              <div style="display:flex;gap:6px;margin-bottom:10px"><select id="rep-kardex-prod" style="flex:1;border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;font-size:11px;outline:none"><option value="">Todos los artículos</option></select></div>
+              <label style="font-size:11px;color:#64748b;display:flex;align-items:center;gap:6px;margin-bottom:10px"><input type="checkbox" id="rep-kardex-costos" checked> Incluir costos y precios</label>
+              <div style="display:flex;gap:8px"><button class="btn-primary" style="flex:1;justify-content:center" onclick="reporteKardexGeneral()">🖨️ Imprimir</button><button class="btn-primary" style="flex:1;justify-content:center;background:#059669" onclick="descargarKardexExcel()">📊 Excel</button></div>
+            </div>
+            <div class="report-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:40px;height:40px;background:#fff1f2;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">⚖️</div><div><div style="font-weight:700;color:#1e293b">Reporte de Ajustes</div><div style="font-size:11px;color:#94a3b8">Carta · Apaisado</div></div></div><div style="font-size:12px;color:#64748b;margin-bottom:14px">Detalle de ajustes: stock antes, cantidad ajustada, stock nuevo, motivo y usuario.</div><div style="display:flex;gap:8px"><button class="btn-primary" style="flex:1;justify-content:center" onclick="reporteAjustesInventario()">🖨️ Imprimir</button><button class="btn-primary" style="flex:1;justify-content:center;background:#059669" onclick="descargarAjustesExcel()">📊 Excel</button></div></div>
             <div class="report-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:40px;height:40px;background:#fff7ed;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">📦</div><div><div style="font-weight:700;color:#1e293b">Inventario Físico</div><div style="font-size:11px;color:#94a3b8">Carta · Con firmas</div></div></div><div style="font-size:12px;color:#64748b;margin-bottom:14px">Lista de productos con stock, mínimo, precios y espacio para conteo físico.</div><button class="btn-primary" style="width:100%;justify-content:center" onclick="reporteInventario()">🖨️ Generar</button></div>
-            <div class="report-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:40px;height:40px;background:#ecfdf5;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">💹</div><div><div style="font-weight:700;color:#1e293b">Valorización Inventario</div><div style="font-size:11px;color:#94a3b8">Carta · Apaisado</div></div></div><div style="font-size:12px;color:#64748b;margin-bottom:14px">Valor del inventario a costo, a precio de venta y margen potencial por producto.</div><button class="btn-primary" style="width:100%;justify-content:center" onclick="reporteValorizacion()">🖨️ Generar</button></div>
             <div class="report-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:40px;height:40px;background:#f0fdf4;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">📈</div><div><div style="font-weight:700;color:#1e293b">Ventas Artículo/Día</div><div style="font-size:11px;color:#94a3b8">Carta · Apaisado</div></div></div><div style="font-size:12px;color:#64748b;margin-bottom:14px">Detalle diario por artículo: unidades vendidas y monto por fecha.</div><button class="btn-primary" style="width:100%;justify-content:center" onclick="reporteVentasArticulo()">🖨️ Generar</button></div>
             <div class="report-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:40px;height:40px;background:#eff6ff;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">💰</div><div><div style="font-weight:700;color:#1e293b">Cuentas por Cobrar</div><div style="font-size:11px;color:#94a3b8">Carta · Apaisado</div></div></div><div style="font-size:12px;color:#64748b;margin-bottom:14px">Listado de clientes con saldo pendiente, vencimientos y estado de cobro.</div><button class="btn-primary" style="width:100%;justify-content:center" onclick="reporteCxC()">🖨️ Generar</button></div>
             <div class="report-card"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><div style="width:40px;height:40px;background:#fefce8;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px">💳</div><div><div style="font-weight:700;color:#1e293b">Cuentas por Pagar</div><div style="font-size:11px;color:#94a3b8">Carta · Apaisado</div></div></div><div style="font-size:12px;color:#64748b;margin-bottom:14px">Listado de deudas a proveedores con montos, abonos, saldos y alertas.</div><button class="btn-primary" style="width:100%;justify-content:center" onclick="reporteCxP()">🖨️ Generar</button></div>
@@ -685,7 +628,7 @@
 </div>
 
 <!-- MODALS -->
-<div class="modal-overlay" id="print-modal" style="display:none">
+<div class="modal-overlay" id="print-modal">
   <div class="modal" style="max-width:380px">
     <div class="modal-title">Formato de Impresión</div>
     <p style="font-size:13px;color:#64748b;margin-bottom:16px">Selecciona el formato deseado</p>
@@ -702,7 +645,7 @@
     <button onclick="closePrintModal()" class="btn-cancel" style="width:100%;margin-top:12px">Cancelar</button>
   </div>
 </div>
-<div class="modal-overlay" id="prod-modal" style="display:none">
+<div class="modal-overlay" id="prod-modal">
   <div class="modal">
     <div class="modal-title" id="prod-modal-title">Nuevo Producto</div>
     <form class="modal-form" id="prod-modal-form">
@@ -720,7 +663,7 @@
     </form>
   </div>
 </div>
-<div class="modal-overlay" id="client-modal" style="display:none">
+<div class="modal-overlay" id="client-modal">
   <div class="modal">
     <div class="modal-title" id="client-modal-title">Nuevo Cliente</div>
     <form class="modal-form" id="client-modal-form">
@@ -734,7 +677,7 @@
     </form>
   </div>
 </div>
-<div class="modal-overlay" id="supplier-modal" style="display:none">
+<div class="modal-overlay" id="supplier-modal">
   <div class="modal">
     <div class="modal-title" id="supplier-modal-title">Nuevo Proveedor</div>
     <form class="modal-form" id="supplier-modal-form">
@@ -749,7 +692,7 @@
     </form>
   </div>
 </div>
-<div class="modal-overlay" id="ajuste-modal" style="display:none">
+<div class="modal-overlay" id="ajuste-modal">
   <div class="modal" style="max-width:380px">
     <div class="modal-title">Ajuste de Inventario</div>
     <div id="ajuste-prod-name" style="font-size:13px;color:#64748b;margin-bottom:14px"></div>
@@ -763,7 +706,82 @@
     </form>
   </div>
 </div>
-<div class="modal-overlay" id="cxc-modal" style="display:none">
+<!-- MODAL: COMBO -->
+<div class="modal-overlay" id="combo-modal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-title" id="combo-modal-title">Nuevo Combo</div>
+    <form class="modal-form" id="combo-form">
+      <input type="hidden" id="combo-id">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-field"><label>Código</label><input type="text" id="combo-codigo" required></div>
+        <div class="form-field"><label>Categoría</label><input type="text" id="combo-categoria" placeholder="Combos" value="Combos"></div>
+      </div>
+      <div class="form-field"><label>Nombre del Combo</label><input type="text" id="combo-nombre" required></div>
+      <div class="form-field"><label>Precio de Venta (L.)</label><input type="number" id="combo-precio" step="0.01" min="0" required></div>
+      <div class="form-field">
+        <label>Artículos Componentes (mínimo 2)</label>
+        <div id="combo-items-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
+        <button type="button" class="btn-primary" style="background:#475569;font-size:12px;padding:6px 12px" onclick="agregarComboItemRow()">+ Agregar Artículo</button>
+      </div>
+      <div style="background:#f8fafc;border-radius:8px;padding:10px 14px;font-size:12px;color:#64748b">💡 El costo del combo se calcula automáticamente sumando el costo de sus componentes. Al venderse, se descuenta el stock de cada componente (no del combo).</div>
+      <div class="modal-actions"><button type="button" class="btn-cancel" onclick="closeModal('combo-modal')">Cancelar</button><button type="submit" class="btn-confirm">Guardar Combo</button></div>
+    </form>
+  </div>
+</div>
+<!-- MODAL: PRODUCCIÓN -->
+<div class="modal-overlay" id="produccion-modal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-title">Nueva Producción</div>
+    <form class="modal-form" id="produccion-form">
+      <div class="form-field">
+        <label>Tipo de Producción</label>
+        <select id="produccion-tipo" style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:13px;outline:none">
+          <option value="fabricacion">Fabricación</option>
+          <option value="transformacion">Transformación</option>
+          <option value="ensamble">Ensamble</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Materias Primas (Entradas — se descuentan del inventario)</label>
+        <div id="produccion-entradas-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
+        <button type="button" class="btn-primary" style="background:#dc2626;font-size:12px;padding:6px 12px" onclick="agregarProduccionRow('entrada')">+ Agregar Materia Prima</button>
+      </div>
+      <div class="form-field">
+        <label>Productos Terminados (Salidas — se agregan al inventario)</label>
+        <div id="produccion-salidas-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
+        <button type="button" class="btn-primary" style="background:#16a34a;font-size:12px;padding:6px 12px" onclick="agregarProduccionRow('salida')">+ Agregar Producto Terminado</button>
+      </div>
+      <div class="form-field"><label>Notas</label><input type="text" id="produccion-notas" placeholder="Observaciones del proceso..."></div>
+      <div class="modal-actions"><button type="button" class="btn-cancel" onclick="closeModal('produccion-modal')">Cancelar</button><button type="submit" class="btn-confirm">Procesar Producción</button></div>
+    </form>
+  </div>
+</div>
+<!-- MODAL: AJUSTE DE INVENTARIO (formal, con consecutivo) -->
+<div class="modal-overlay" id="ajuste-inv-modal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-title">Nuevo Ajuste de Inventario</div>
+    <form class="modal-form" id="ajuste-inv-form">
+      <div class="form-field">
+        <label>Artículo</label>
+        <select id="ajinv-prod-sel" style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:13px;outline:none" onchange="actualizarStockActualAjInv()" required></select>
+      </div>
+      <div id="ajinv-stock-actual" style="font-size:12px;color:#64748b;margin-top:-8px"></div>
+      <div class="form-field">
+        <label>Tipo de Ajuste</label>
+        <select id="ajinv-tipo" style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;font-size:13px;outline:none" onchange="toggleAjInvCantidadLabel()">
+          <option value="entrada">Entrada (aumentar stock)</option>
+          <option value="salida">Salida (reducir stock)</option>
+          <option value="ajuste">Ajuste directo (fijar nuevo stock)</option>
+        </select>
+      </div>
+      <div class="form-field"><label id="ajinv-cantidad-label">Cantidad</label><input type="number" id="ajinv-cantidad" step="0.01" required></div>
+      <div class="form-field"><label>Costo Unitario (L.)</label><input type="number" id="ajinv-costo" step="0.01" min="0" value="0"></div>
+      <div class="form-field"><label>Motivo</label><input type="text" id="ajinv-motivo" placeholder="Merma, conteo físico, corrección..." required></div>
+      <div class="modal-actions"><button type="button" class="btn-cancel" onclick="closeModal('ajuste-inv-modal')">Cancelar</button><button type="submit" class="btn-confirm">Aplicar Ajuste</button></div>
+    </form>
+  </div>
+</div>
+<div class="modal-overlay" id="cxc-modal">
   <div class="modal" style="max-width:400px">
     <div class="modal-title">Nueva Cuenta por Cobrar</div>
     <form class="modal-form" id="cxc-form">
@@ -775,7 +793,7 @@
     </form>
   </div>
 </div>
-<div class="modal-overlay" id="cxp-modal" style="display:none">
+<div class="modal-overlay" id="cxp-modal">
   <div class="modal" style="max-width:400px">
     <div class="modal-title">Nueva Cuenta por Pagar</div>
     <form class="modal-form" id="cxp-form">
@@ -787,7 +805,7 @@
     </form>
   </div>
 </div>
-<div class="modal-overlay" id="user-modal" style="display:none">
+<div class="modal-overlay" id="user-modal">
   <div class="modal" style="max-width:420px">
     <div class="modal-title" id="user-modal-title">Nuevo Usuario</div>
     <form class="modal-form" id="user-modal-form">
@@ -801,7 +819,7 @@
     </form>
   </div>
 </div>
-<div class="modal-overlay" id="branch-modal" style="display:none">
+<div class="modal-overlay" id="branch-modal">
   <div class="modal">
     <div class="modal-title" id="branch-modal-title">Nueva Sucursal</div>
     <form class="modal-form" id="branch-modal-form">
@@ -820,7 +838,7 @@
     </form>
   </div>
 </div>
-<div class="modal-overlay" id="purchase-modal" style="display:none">
+<div class="modal-overlay" id="purchase-modal">
   <div class="modal" style="max-width:650px">
     <div class="modal-title">Nueva Orden de Compra</div>
     <form class="modal-form" id="purchase-modal-form">
@@ -857,7 +875,7 @@
     </form>
   </div>
 </div>
-<div class="modal-overlay" id="return-modal" style="display:none">
+<div class="modal-overlay" id="return-modal">
   <div class="modal" style="max-width:560px">
     <div class="modal-title">Nueva Devolución</div>
     <form class="modal-form" id="return-modal-form">
@@ -873,7 +891,7 @@
 </div>
 <script src="app.js"></script>
 <!-- MODAL BANCO -->
-<div class="modal-overlay" id="banco-modal" style="display:none">
+<div class="modal-overlay" id="banco-modal">
   <div class="modal" style="max-width:420px">
     <div class="modal-title" id="banco-modal-title">Nueva Cuenta Bancaria</div>
     <form class="modal-form" id="banco-modal-form">
@@ -887,7 +905,7 @@
   </div>
 </div>
 <!-- MODAL MOVIMIENTO BANCARIO -->
-<div class="modal-overlay" id="movimiento-modal" style="display:none">
+<div class="modal-overlay" id="movimiento-modal">
   <div class="modal" style="max-width:420px">
     <div class="modal-title">Nuevo Movimiento Bancario</div>
     <form class="modal-form" id="movimiento-modal-form">
@@ -902,7 +920,7 @@
   </div>
 </div>
 <!-- MODAL IMPUESTO -->
-<div class="modal-overlay" id="impuesto-modal" style="display:none">
+<div class="modal-overlay" id="impuesto-modal">
   <div class="modal" style="max-width:400px">
     <div class="modal-title" id="imp-modal-title">Crear Impuesto</div>
     <form class="modal-form" id="impuesto-modal-form">
@@ -915,7 +933,7 @@
   </div>
 </div>
 <!-- MODAL PERMISOS USUARIO -->
-<div class="modal-overlay" id="permisos-modal" style="display:none">
+<div class="modal-overlay" id="permisos-modal">
   <div class="modal" style="max-width:450px">
     <div class="modal-title">Bloqueo de Módulos</div>
     <div style="font-size:13px;color:#64748b;margin-bottom:14px" id="permisos-user-nombre"></div>
@@ -924,7 +942,7 @@
   </div>
 </div>
 <!-- MODAL IMPORTAR EXCEL -->
-<div class="modal-overlay" id="excel-modal" style="display:none">
+<div class="modal-overlay" id="excel-modal">
   <div class="modal" style="max-width:500px">
     <div class="modal-header"><h3>Importar Productos desde Excel</h3>
       <button onclick="closeModal('excel-modal')" style="background:none;border:none;font-size:18px;cursor:pointer;color:#94a3b8">✕</button></div>
@@ -951,7 +969,7 @@
 </div>
 <!-- MODAL APERTURA DE TURNO -->
 
-<div class="modal-overlay" id="movimiento-caja-modal" style="display:none">
+<div class="modal-overlay" id="movimiento-caja-modal">
   <div class="modal" style="max-width:400px">
     <div class="modal-title">💰 Movimiento de Caja</div>
     <div style="font-size:12px;color:#64748b;margin-bottom:14px">Registra ingresos o egresos que no son ventas (vueltos, gastos, etc.)</div>
@@ -975,7 +993,7 @@
 </div>
 
 <!-- MODAL EDITOR DE REPORTES -->
-<div class="modal-overlay" id="editor-reporte-modal" style="display:none">
+<div class="modal-overlay" id="editor-reporte-modal">
   <div class="modal" style="max-width:900px;max-height:90vh;overflow-y:auto">
     <div class="modal-title">Editor de Reportes</div>
     <div style="font-size:13px;color:#64748b;margin-bottom:14px">Personaliza el HTML del reporte. Los cambios se guardan localmente.</div>
@@ -998,7 +1016,7 @@
   </div>
 </div>
 <!-- Modal importar clientes -->
-<div id="import-clientes-modal" class="modal-overlay" style="display:none">
+<div id="import-clientes-modal" class="modal-overlay">
   <div class="modal" style="max-width:500px">
     <div class="modal-header"><h3>Importar Clientes desde Excel</h3>
       <button onclick="closeModal('import-clientes-modal')" style="background:none;border:none;font-size:18px;cursor:pointer;color:#94a3b8">✕</button></div>
@@ -1024,7 +1042,7 @@
 </div>
 
 <!-- Modal importar proveedores -->
-<div id="import-proveedores-modal" class="modal-overlay" style="display:none">
+<div id="import-proveedores-modal" class="modal-overlay">
   <div class="modal" style="max-width:500px">
     <div class="modal-header"><h3>Importar Proveedores desde Excel</h3>
       <button onclick="closeModal('import-proveedores-modal')" style="background:none;border:none;font-size:18px;cursor:pointer;color:#94a3b8">✕</button></div>
@@ -1050,7 +1068,7 @@
 </div>
 
 <!-- Modal importar inventario -->
-<div id="import-inventario-modal" class="modal-overlay" style="display:none">
+<div id="import-inventario-modal" class="modal-overlay">
   <div class="modal" style="max-width:500px">
     <div class="modal-header"><h3>Importar Movimientos de Inventario</h3>
       <button onclick="closeModal('import-inventario-modal')" style="background:none;border:none;font-size:18px;cursor:pointer;color:#94a3b8">✕</button></div>
@@ -1079,7 +1097,7 @@
 </div>
 
 <!-- Modal Serie Factura -->
-<div id="serie-modal" class="modal-overlay" style="display:none">
+<div id="serie-modal" class="modal-overlay">
   <div class="modal" style="max-width:500px">
     <div class="modal-header">
       <h3 id="serie-modal-title">Nueva Serie de Factura</h3>
@@ -1124,7 +1142,7 @@
 <!-- PIE DE PÁGINA — visible siempre, fuera del #app -->
 <footer style="position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#0f172a;border-top:1px solid #1e293b;padding:6px 20px;display:flex;align-items:center;justify-content:center">
   <span style="font-size:11px;color:#64748b;font-family:'DM Sans',sans-serif;text-align:center;letter-spacing:.2px">
-    &copy; 2026-2027 PetraPOS v7.3 - Software de Facturación e Inventario &nbsp;|&nbsp; Metric Solutions &amp; POS - WhatsApp: +504 9450 2710
+    &copy; 2026-2027 PetraPOS v2.5 - Control de Facturación - Compras -Bancos &nbsp;|&nbsp; Petra Solutions -WhatsApp: +504 9697 8435
   </span>
 </footer>
 <!-- Overlay para cerrar sidebar en móvil -->

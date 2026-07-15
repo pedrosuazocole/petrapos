@@ -41,7 +41,7 @@ USER node
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
-  CMD wget -qO- http://localhost:3000/api/licencia/estado || exit 1
+  CMD wget -qO- http://localhost:3000/api/health || exit 1
 
 # Comando de inicio
 CMD ["node", "server.js"]

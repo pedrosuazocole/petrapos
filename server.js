@@ -38,8 +38,7 @@ const initSqlJs  = require('sql.js');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'metricpos_secret_2026_hn';
-const LICENSE_SECRET = process.env.LICENSE_SECRET || 'MPOS2026HN_LIC_KEY';
+const JWT_SECRET = process.env.JWT_SECRET || 'petrapos_secret_2026_hn';
 // Railway Volume: detectar automáticamente la ruta correcta con permisos de escritura
 function _resolveDataDir() {
   const candidates = [
@@ -47,7 +46,7 @@ function _resolveDataDir() {
     process.env.DATA_DIR,                        // Variable manual
     '/data',                                     // Mount path por defecto en Railway
     path.join(__dirname, 'data'),                // Local Windows/Linux
-    '/tmp/metricpos'                             // Último recurso (Railway sin volumen)
+    '/tmp/petrapos'                             // Último recurso (Railway sin volumen)
   ].filter(Boolean);
 
   for (const dir of candidates) {
@@ -67,7 +66,7 @@ function _resolveDataDir() {
 }
 
 const DATA_DIR = _resolveDataDir();
-const DB_FILE  = path.join(DATA_DIR, 'metricpos.db');
+const DB_FILE  = path.join(DATA_DIR, 'petrapos.db');
 
 // Confiar en el proxy de Railway/nginx para HTTPS y IPs reales
 app.set('trust proxy', 1);
@@ -93,67 +92,6 @@ function run(sql,params=[]){ db.run(sql,params); }
 function all(sql,params=[]){ const s=db.prepare(sql),r=[]; s.bind(params); while(s.step())r.push(s.getAsObject()); s.free(); return r; }
 function get(sql,params=[]){ return all(sql,params)[0]||null; }
 
-// ── LICENCIAS ──
-const crypto=require('crypto');
-const TIPOS_LICENCIA={mensual:30,trimestral:90,anual:365,vitalicia:36500,demo:7};
-
-function generarClave(tipo,seed){
-  // Formato: MPOS-TIPO-XXXX-XXXX-XXXX  (determinista por seed+tipo+secret)
-  const base=`${LICENSE_SECRET}|${tipo}|${seed}`;
-  const hash=crypto.createHash('sha256').update(base).digest('hex').toUpperCase();
-  const p=t=>hash.substr(t,4);
-  return `MPOS-${tipo.substring(0,3).toUpperCase()}-${p(0)}-${p(4)}-${p(8)}`;
-}
-
-function validarClave(clave){
-  for(const tipo of Object.keys(TIPOS_LICENCIA)){
-    for(let seed=1;seed<=9999;seed++){
-      if(generarClave(tipo,seed)===clave.toUpperCase()) return tipo;
-    }
-  }
-  return null;
-}
-
-function getLicenciaActiva(){
-  return get(`SELECT * FROM licencias WHERE activa=1 AND date(fecha_vencimiento)>=date('now') ORDER BY id DESC`);
-}
-
-// Endpoint: verificar estado de licencia (público para el frontend antes de login)
-app.get('/api/licencia/estado',(req,res)=>{
-  // Licencia desactivada en Petra POS — siempre activo
-  res.json({activa:true,tipo:'Petra POS',vencimiento:'2099-12-31',diasRestantes:99999});
-});
-
-// Endpoint: activar licencia
-app.post('/api/licencia/activar',(req,res)=>{
-  const{clave}=req.body;
-  if(!clave)return res.status(400).json({error:'Clave requerida'});
-  // Verificar si ya fue usada
-  const usada=get(`SELECT id FROM licencias WHERE clave=?`,[clave.toUpperCase()]);
-  if(usada)return res.status(400).json({error:'Esta clave ya fue utilizada'});
-  const tipo=validarClave(clave);
-  if(!tipo)return res.status(400).json({error:'Clave de licencia inválida'});
-  const dias=TIPOS_LICENCIA[tipo];
-  const hoy=new Date(); hoy.setHours(hoy.getHours()-6);
-  const venc=new Date(hoy);
-  venc.setDate(venc.getDate()+dias);
-  const fechaAct=hoy.toISOString().substring(0,10);
-  const fechaVenc=venc.toISOString().substring(0,10);
-  // Desactivar licencias anteriores
-  run(`UPDATE licencias SET activa=0`);
-  run(`INSERT INTO licencias(clave,tipo,fecha_activacion,fecha_vencimiento,activa)VALUES(?,?,?,?,1)`,[clave.toUpperCase(),tipo,fechaAct,fechaVenc]);
-  saveDB();
-  res.json({ok:true,tipo,vencimiento:fechaVenc,diasRestantes:dias});
-});
-
-// Endpoint: generar clave (solo para desarrollo/admin - protegido)
-app.post('/api/licencia/generar',auth(['admin']),(req,res)=>{
-  const{tipo,seed}=req.body;
-  if(!TIPOS_LICENCIA[tipo])return res.status(400).json({error:'Tipo inválido'});
-  const s=seed||Math.floor(Math.random()*9000)+1000;
-  res.json({clave:generarClave(tipo,s),tipo,dias:TIPOS_LICENCIA[tipo]});
-});
-
 function createSchema(){
   db.run(`PRAGMA journal_mode=WAL`);
   db.run(`CREATE TABLE IF NOT EXISTS sucursales(id TEXT PRIMARY KEY,nombre TEXT,direccion TEXT,telefono TEXT,rtn TEXT,cai TEXT,serie TEXT,rango_ini TEXT,rango_fin TEXT,fecha_limite TEXT,logo TEXT,activa INTEGER DEFAULT 1,creado TEXT DEFAULT(datetime('now','-6 hours')))`);
@@ -177,229 +115,8 @@ function createSchema(){
   db.run(`CREATE TABLE IF NOT EXISTS pagos_cxc(id INTEGER PRIMARY KEY AUTOINCREMENT,cxc_id TEXT,monto REAL,usuario_id TEXT,metodo TEXT DEFAULT 'efectivo',banco_id TEXT,fecha TEXT DEFAULT(datetime('now','-6 hours')))`);
   db.run(`CREATE TABLE IF NOT EXISTS pagos_cxp(id INTEGER PRIMARY KEY AUTOINCREMENT,cxp_id TEXT,monto REAL,usuario_id TEXT,fecha TEXT DEFAULT(datetime('now','-6 hours')))`);
   db.run(`CREATE TABLE IF NOT EXISTS config(clave TEXT PRIMARY KEY,valor TEXT)`);
-  db.run(`CREATE TABLE IF NOT EXISTS licencias(id INTEGER PRIMARY KEY AUTOINCREMENT,clave TEXT NOT NULL,tipo TEXT NOT NULL,fecha_activacion TEXT,fecha_vencimiento TEXT,activa INTEGER DEFAULT 1,creado TEXT DEFAULT(datetime('now','-6 hours')))`);
   db.run(`CREATE TABLE IF NOT EXISTS sync_log(id INTEGER PRIMARY KEY AUTOINCREMENT,sucursal_id TEXT,tabla TEXT,operacion TEXT,registro_id TEXT,datos TEXT,fecha TEXT DEFAULT(datetime('now','-6 hours')),sincronizado INTEGER DEFAULT 0)`);
-  
-// ════════════════════════════════════════════════════════════
-// PETRA: COMBOS / ARTÍCULOS INTEGRADOS
-// ════════════════════════════════════════════════════════════
-app.get('/api/combos', auth(), (req,res) => {
-  const combos = all(`SELECT c.*,
-    GROUP_CONCAT(p.nombre||'×'||ci.cantidad) as items_desc
-    FROM combos c
-    LEFT JOIN combo_items ci ON ci.combo_id=c.id
-    LEFT JOIN productos p ON p.id=ci.producto_id
-    WHERE c.activo=1 GROUP BY c.id ORDER BY c.nombre`);
-  res.json(combos);
-});
-app.get('/api/combos/:id', auth(), (req,res) => {
-  const combo = get(`SELECT * FROM combos WHERE id=?`,[req.params.id]);
-  if (!combo) return res.status(404).json({error:'No encontrado'});
-  combo.items = all(`SELECT ci.*,p.nombre as producto_nombre,p.codigo as producto_codigo,p.precio_venta,p.costo
-    FROM combo_items ci JOIN productos p ON p.id=ci.producto_id WHERE ci.combo_id=?`,[req.params.id]);
-  res.json(combo);
-});
-app.post('/api/combos', auth(['admin','supervisor']), (req,res) => {
-  try {
-    const {nombre,codigo,descripcion,precio_venta,items} = req.body;
-    if (!nombre) return res.status(400).json({error:'Nombre requerido'});
-    const id = uuid();
-    run(`INSERT INTO combos(id,codigo,nombre,descripcion,precio_venta) VALUES(?,?,?,?,?)`,
-      [id, codigo||null, nombre, descripcion||null, parseFloat(precio_venta)||0]);
-    (items||[]).forEach(it => run(`INSERT INTO combo_items(combo_id,producto_id,cantidad) VALUES(?,?,?)`,
-      [id, it.producto_id, parseFloat(it.cantidad)||1]));
-    saveDB(); res.json({ok:1,id});
-  } catch(e){ res.status(500).json({error:e.message}); }
-});
-app.put('/api/combos/:id', auth(['admin','supervisor']), (req,res) => {
-  try {
-    const {nombre,codigo,descripcion,precio_venta,items} = req.body;
-    run(`UPDATE combos SET nombre=?,codigo=?,descripcion=?,precio_venta=? WHERE id=?`,
-      [nombre,codigo,descripcion,parseFloat(precio_venta)||0,req.params.id]);
-    run(`DELETE FROM combo_items WHERE combo_id=?`,[req.params.id]);
-    (items||[]).forEach(it => run(`INSERT INTO combo_items(combo_id,producto_id,cantidad) VALUES(?,?,?)`,
-      [req.params.id, it.producto_id, parseFloat(it.cantidad)||1]));
-    saveDB(); res.json({ok:1});
-  } catch(e){ res.status(500).json({error:e.message}); }
-});
-app.delete('/api/combos/:id', auth(['admin']), (req,res) => {
-  run(`UPDATE combos SET activo=0 WHERE id=?`,[req.params.id]);
-  saveDB(); res.json({ok:1});
-});
-
-// ════════════════════════════════════════════════════════════
-// PETRA: PRODUCCIÓN BÁSICA
-// ════════════════════════════════════════════════════════════
-app.get('/api/producciones', auth(), (req,res) => {
-  const {estado,fecha_ini,fecha_fin,limite} = req.query;
-  let sql = `SELECT p.*,u.nombre as usuario_nombre,s.nombre as sucursal_nombre
-    FROM producciones p LEFT JOIN usuarios u ON u.id=p.usuario_id
-    LEFT JOIN sucursales s ON s.id=p.sucursal_id WHERE 1=1`;
-  const params = [];
-  if (estado) { sql+=` AND p.estado=?`; params.push(estado); }
-  if (fecha_ini) { sql+=` AND p.fecha>=?`; params.push(fecha_ini); }
-  if (fecha_fin) { sql+=` AND p.fecha<=?`; params.push(fecha_fin+' 23:59:59'); }
-  sql+=` ORDER BY p.fecha DESC LIMIT ?`; params.push(parseInt(limite)||200);
-  res.json(all(sql,params));
-});
-app.get('/api/producciones/:id', auth(), (req,res) => {
-  const prod = get(`SELECT * FROM producciones WHERE id=?`,[req.params.id]);
-  if (!prod) return res.status(404).json({error:'No encontrado'});
-  prod.entradas = all(`SELECT * FROM produccion_items_entrada WHERE produccion_id=?`,[req.params.id]);
-  prod.salidas  = all(`SELECT * FROM produccion_items_salida  WHERE produccion_id=?`,[req.params.id]);
-  res.json(prod);
-});
-app.post('/api/producciones', auth(['admin','supervisor']), (req,res) => {
-  try {
-    const {tipo,notas,sucursal_id,entradas,salidas} = req.body;
-    const id = uuid();
-    const count = (get(`SELECT COUNT(*) as c FROM producciones`)||{c:0}).c;
-    const numero = 'PROD-'+String(count+1).padStart(6,'0');
-    run(`INSERT INTO producciones(id,numero,sucursal_id,usuario_id,tipo,notas,estado) VALUES(?,?,?,?,?,?,'borrador')`,
-      [id,numero,sucursal_id||req.user.sucursal_id,req.user.id,tipo||'fabricacion',notas||null]);
-    (entradas||[]).forEach(e => run(`INSERT INTO produccion_items_entrada(produccion_id,producto_id,producto_nombre,cantidad,costo_unit) VALUES(?,?,?,?,?)`,
-      [id,e.producto_id,e.producto_nombre||'',parseFloat(e.cantidad)||1,parseFloat(e.costo_unit)||0]));
-    (salidas||[]).forEach(s => run(`INSERT INTO produccion_items_salida(produccion_id,producto_id,producto_nombre,cantidad,costo_unit) VALUES(?,?,?,?,?)`,
-      [id,s.producto_id,s.producto_nombre||'',parseFloat(s.cantidad)||1,parseFloat(s.costo_unit)||0]));
-    saveDB(); res.json({ok:1,id,numero});
-  } catch(e){ res.status(500).json({error:e.message}); }
-});
-app.put('/api/producciones/:id/procesar', auth(['admin','supervisor']), (req,res) => {
-  try {
-    const prod = get(`SELECT * FROM producciones WHERE id=?`,[req.params.id]);
-    if (!prod) return res.status(404).json({error:'No encontrado'});
-    if (prod.estado!=='borrador') return res.status(400).json({error:'Solo se puede procesar en borrador'});
-    const entradas = all(`SELECT * FROM produccion_items_entrada WHERE produccion_id=?`,[req.params.id]);
-    const salidas  = all(`SELECT * FROM produccion_items_salida  WHERE produccion_id=?`,[req.params.id]);
-    const suc = prod.sucursal_id;
-    const now = new Date(new Date().getTime()-6*3600000).toISOString().replace('T',' ').substring(0,19);
-    // Descontar entradas (materias primas)
-    entradas.forEach(e => {
-      const inv = get(`SELECT stock FROM inventario WHERE producto_id=? AND sucursal_id=?`,[e.producto_id,suc]);
-      const st  = inv?.stock||0;
-      run(`INSERT OR REPLACE INTO inventario(producto_id,sucursal_id,stock) VALUES(?,?,?)`,
-        [e.producto_id,suc,Math.max(0,st-e.cantidad)]);
-      run(`INSERT INTO kardex(producto_id,sucursal_id,tipo,cantidad,costo_unit,saldo_stock,referencia,motivo,usuario_id,fecha) VALUES(?,?,'salida',?,?,?,?,'Produccion',?,?)`,
-        [e.producto_id,suc,e.cantidad,e.costo_unit,Math.max(0,st-e.cantidad),prod.numero,prod.usuario_id,now]);
-    });
-    // Agregar salidas (productos terminados)
-    salidas.forEach(s => {
-      const inv = get(`SELECT stock FROM inventario WHERE producto_id=? AND sucursal_id=?`,[s.producto_id,suc]);
-      const st  = inv?.stock||0;
-      run(`INSERT OR REPLACE INTO inventario(producto_id,sucursal_id,stock) VALUES(?,?,?)`,
-        [s.producto_id,suc,st+s.cantidad]);
-      run(`INSERT INTO kardex(producto_id,sucursal_id,tipo,cantidad,costo_unit,saldo_stock,referencia,motivo,usuario_id,fecha) VALUES(?,?,'entrada',?,?,?,?,'Produccion',?,?)`,
-        [s.producto_id,suc,s.cantidad,s.costo_unit,st+s.cantidad,prod.numero,prod.usuario_id,now]);
-    });
-    run(`UPDATE producciones SET estado='procesado' WHERE id=?`,[req.params.id]);
-    saveDB(); res.json({ok:1});
-  } catch(e){ res.status(500).json({error:e.message}); }
-});
-app.put('/api/producciones/:id/anular', auth(['admin']), (req,res) => {
-  run(`UPDATE producciones SET estado='anulado' WHERE id=?`,[req.params.id]);
-  saveDB(); res.json({ok:1});
-});
-
-// ════════════════════════════════════════════════════════════
-// PETRA: AJUSTES DE INVENTARIO
-// ════════════════════════════════════════════════════════════
-app.get('/api/ajustes', auth(), (req,res) => {
-  const {fecha_ini,fecha_fin,tipo,limite} = req.query;
-  let sql=`SELECT a.*,u.nombre as usuario_nombre,s.nombre as sucursal_nombre
-    FROM ajustes_inventario a LEFT JOIN usuarios u ON u.id=a.usuario_id
-    LEFT JOIN sucursales s ON s.id=a.sucursal_id WHERE 1=1`;
-  const params=[];
-  if (tipo)     { sql+=` AND a.tipo=?`;    params.push(tipo); }
-  if (fecha_ini){ sql+=` AND a.fecha>=?`;  params.push(fecha_ini); }
-  if (fecha_fin){ sql+=` AND a.fecha<=?`;  params.push(fecha_fin+' 23:59:59'); }
-  sql+=` ORDER BY a.fecha DESC LIMIT ?`; params.push(parseInt(limite)||200);
-  res.json(all(sql,params));
-});
-app.get('/api/ajustes/:id', auth(), (req,res) => {
-  const ajuste = get(`SELECT * FROM ajustes_inventario WHERE id=?`,[req.params.id]);
-  if (!ajuste) return res.status(404).json({error:'No encontrado'});
-  ajuste.items = all(`SELECT * FROM ajuste_items WHERE ajuste_id=?`,[req.params.id]);
-  res.json(ajuste);
-});
-app.post('/api/ajustes', auth(['admin','supervisor']), (req,res) => {
-  try {
-    const {tipo,motivo,notas,sucursal_id,items} = req.body;
-    if (!items?.length) return res.status(400).json({error:'Debe incluir al menos un artículo'});
-    const id  = uuid();
-    const cnt = (get(`SELECT COUNT(*) as c FROM ajustes_inventario`)||{c:0}).c;
-    const num = 'AJ-'+String(cnt+1).padStart(6,'0');
-    const now = new Date(new Date().getTime()-6*3600000).toISOString().replace('T',' ').substring(0,19);
-    const suc = sucursal_id||req.user.sucursal_id;
-    run(`INSERT INTO ajustes_inventario(id,numero,sucursal_id,usuario_id,tipo,motivo,notas,estado,fecha) VALUES(?,?,?,?,?,?,?,'aplicado',?)`,
-      [id,num,suc,req.user.id,tipo||'ajuste',motivo||'',notas||null,now]);
-    items.forEach(item => {
-      const inv = get(`SELECT stock FROM inventario WHERE producto_id=? AND sucursal_id=?`,[item.producto_id,suc]);
-      const stAntes = inv?.stock||0;
-      const qty     = parseFloat(item.cantidad_ajuste)||0;
-      let stNuevo   = stAntes;
-      if (tipo==='entrada') stNuevo = stAntes + qty;
-      else if (tipo==='salida') stNuevo = Math.max(0, stAntes - qty);
-      else stNuevo = qty; // ajuste directo al valor
-      run(`INSERT OR REPLACE INTO inventario(producto_id,sucursal_id,stock) VALUES(?,?,?)`,
-        [item.producto_id,suc,stNuevo]);
-      run(`INSERT INTO ajuste_items(ajuste_id,producto_id,producto_nombre,producto_codigo,cantidad_anterior,cantidad_ajuste,cantidad_nueva,costo_unit,motivo_item) VALUES(?,?,?,?,?,?,?,?,?)`,
-        [id,item.producto_id,item.producto_nombre||'',item.producto_codigo||'',stAntes,qty,stNuevo,parseFloat(item.costo_unit)||0,item.motivo_item||null]);
-      run(`INSERT INTO kardex(producto_id,sucursal_id,tipo,cantidad,costo_unit,saldo_stock,referencia,motivo,usuario_id,fecha) VALUES(?,?,?,?,?,?,?,?,?,?)`,
-        [item.producto_id,suc,tipo==='entrada'?'entrada':'salida',Math.abs(qty),parseFloat(item.costo_unit)||0,stNuevo,num,motivo||'Ajuste',req.user.id,now]);
-    });
-    saveDB(); res.json({ok:1,id,numero:num});
-  } catch(e){ res.status(500).json({error:e.message}); }
-});
-
-// ════════════════════════════════════════════════════════════
-// PETRA: REPORTES ESPECIALES
-// ════════════════════════════════════════════════════════════
-// Kardex con rango de fechas y filtros
-app.get('/api/reportes/kardex', auth(), (req,res) => {
-  const {producto_id,sucursal_id,fecha_ini,fecha_fin} = req.query;
-  let sql=`SELECT k.*,p.nombre as producto_nombre,p.codigo as producto_codigo
-    FROM kardex k LEFT JOIN productos p ON p.id=k.producto_id WHERE 1=1`;
-  const params=[];
-  if (producto_id) { sql+=` AND k.producto_id=?`; params.push(producto_id); }
-  if (sucursal_id) { sql+=` AND k.sucursal_id=?`; params.push(sucursal_id); }
-  if (fecha_ini)   { sql+=` AND k.fecha>=?`;      params.push(fecha_ini); }
-  if (fecha_fin)   { sql+=` AND k.fecha<=?`;      params.push(fecha_fin+' 23:59:59'); }
-  sql+=` ORDER BY k.producto_id,k.fecha`;
-  res.json(all(sql,params));
-});
-
-// Reporte Valorizado de Inventario
-app.get('/api/reportes/inventario_valorizado', auth(), (req,res) => {
-  const {sucursal_id} = req.query;
-  let sql=`SELECT p.id,p.codigo,p.nombre,p.categoria,p.costo,
-    i.stock, (p.costo*i.stock) as valor_total,
-    p.precio_venta,(p.precio_venta*i.stock) as valor_venta
-    FROM inventario i JOIN productos p ON p.id=i.producto_id WHERE p.activo=1`;
-  const params=[];
-  if (sucursal_id) { sql+=` AND i.sucursal_id=?`; params.push(sucursal_id); }
-  sql+=` ORDER BY p.categoria,p.nombre`;
-  const rows = all(sql,params);
-  const totales = { total_items: rows.length, stock_total: rows.reduce((s,r)=>s+r.stock,0), valor_costo: rows.reduce((s,r)=>s+r.valor_total,0), valor_venta: rows.reduce((s,r)=>s+r.valor_venta,0) };
-  res.json({rows,totales});
-});
-
-// Reporte de Ajustes de Inventario
-app.get('/api/reportes/ajustes', auth(), (req,res) => {
-  const {fecha_ini,fecha_fin,tipo,sucursal_id} = req.query;
-  let sql=`SELECT ai.*,ai2.producto_nombre,ai2.producto_codigo,ai2.cantidad_anterior,ai2.cantidad_ajuste,ai2.cantidad_nueva,ai2.costo_unit,
-    u.nombre as usuario_nombre,s.nombre as sucursal_nombre
-    FROM ajuste_items ai2 JOIN ajustes_inventario ai ON ai.id=ai2.ajuste_id
-    LEFT JOIN usuarios u ON u.id=ai.usuario_id LEFT JOIN sucursales s ON s.id=ai.sucursal_id WHERE 1=1`;
-  const params=[];
-  if (fecha_ini)   { sql+=` AND ai.fecha>=?`; params.push(fecha_ini); }
-  if (fecha_fin)   { sql+=` AND ai.fecha<=?`; params.push(fecha_fin+' 23:59:59'); }
-  if (tipo)        { sql+=` AND ai.tipo=?`;   params.push(tipo); }
-  if (sucursal_id) { sql+=` AND ai.sucursal_id=?`; params.push(sucursal_id); }
-  sql+=` ORDER BY ai.fecha DESC`;
-  res.json(all(sql,params));
-});
-
-// ── BANCOS ──
+  // ── BANCOS ──
   db.run(`CREATE TABLE IF NOT EXISTS bancos(id TEXT PRIMARY KEY,nombre TEXT NOT NULL,numero_cuenta TEXT,tipo TEXT DEFAULT 'corriente',moneda TEXT DEFAULT 'HNL',saldo_inicial REAL DEFAULT 0,saldo_actual REAL DEFAULT 0,activo INTEGER DEFAULT 1,creado TEXT DEFAULT(datetime('now','-6 hours')))`);
   db.run(`CREATE TABLE IF NOT EXISTS bancos_movimientos(id TEXT PRIMARY KEY,banco_id TEXT NOT NULL,tipo TEXT NOT NULL CHECK(tipo IN('deposito','retiro','transferencia','nota_credito','nota_debito')),fecha TEXT DEFAULT(datetime('now','-6 hours')),monto REAL NOT NULL,descripcion TEXT,referencia TEXT,saldo_anterior REAL DEFAULT 0,saldo_nuevo REAL DEFAULT 0,usuario_id TEXT,FOREIGN KEY(banco_id) REFERENCES bancos(id))`);
   // ── IMPUESTOS ──
@@ -504,78 +221,6 @@ app.get('/api/reportes/ajustes', auth(), (req,res) => {
     fotos TEXT DEFAULT '[]',
     creado TEXT DEFAULT(datetime('now','-6 hours'))
   )`);
-
-  // ── PETRA: COMBOS / ARTÍCULOS INTEGRADOS ─────────────────────────────────
-  db.run(`CREATE TABLE IF NOT EXISTS combos(
-    id TEXT PRIMARY KEY,
-    codigo TEXT UNIQUE,
-    nombre TEXT NOT NULL,
-    descripcion TEXT,
-    precio_venta REAL DEFAULT 0,
-    activo INTEGER DEFAULT 1,
-    creado TEXT DEFAULT(datetime('now','-6 hours'))
-  )`);
-  db.run(`CREATE TABLE IF NOT EXISTS combo_items(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    combo_id TEXT NOT NULL,
-    producto_id TEXT NOT NULL,
-    cantidad REAL NOT NULL DEFAULT 1,
-    FOREIGN KEY(combo_id) REFERENCES combos(id)
-  )`);
-
-  // ── PETRA: PRODUCCIÓN BÁSICA ──────────────────────────────────────────────
-  db.run(`CREATE TABLE IF NOT EXISTS producciones(
-    id TEXT PRIMARY KEY,
-    numero TEXT UNIQUE,
-    sucursal_id TEXT,
-    usuario_id TEXT,
-    tipo TEXT DEFAULT 'fabricacion' CHECK(tipo IN('fabricacion','transformacion','ensamble')),
-    estado TEXT DEFAULT 'borrador' CHECK(estado IN('borrador','procesado','anulado')),
-    notas TEXT,
-    fecha TEXT DEFAULT(datetime('now','-6 hours'))
-  )`);
-  db.run(`CREATE TABLE IF NOT EXISTS produccion_items_entrada(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    produccion_id TEXT NOT NULL,
-    producto_id TEXT NOT NULL,
-    producto_nombre TEXT,
-    cantidad REAL NOT NULL,
-    costo_unit REAL DEFAULT 0
-  )`);
-  db.run(`CREATE TABLE IF NOT EXISTS produccion_items_salida(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    produccion_id TEXT NOT NULL,
-    producto_id TEXT NOT NULL,
-    producto_nombre TEXT,
-    cantidad REAL NOT NULL,
-    costo_unit REAL DEFAULT 0
-  )`);
-
-  // ── PETRA: AJUSTES DE INVENTARIO ─────────────────────────────────────────
-  db.run(`CREATE TABLE IF NOT EXISTS ajustes_inventario(
-    id TEXT PRIMARY KEY,
-    numero TEXT UNIQUE,
-    sucursal_id TEXT,
-    usuario_id TEXT,
-    tipo TEXT DEFAULT 'entrada' CHECK(tipo IN('entrada','salida','ajuste')),
-    motivo TEXT,
-    estado TEXT DEFAULT 'aplicado',
-    notas TEXT,
-    fecha TEXT DEFAULT(datetime('now','-6 hours'))
-  )`);
-  db.run(`CREATE TABLE IF NOT EXISTS ajuste_items(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ajuste_id TEXT NOT NULL,
-    producto_id TEXT NOT NULL,
-    producto_nombre TEXT,
-    producto_codigo TEXT,
-    cantidad_anterior REAL DEFAULT 0,
-    cantidad_ajuste REAL NOT NULL,
-    cantidad_nueva REAL DEFAULT 0,
-    costo_unit REAL DEFAULT 0,
-    motivo_item TEXT
-  )`);
-
   // Migraciones para BD existentes
   try { db.run(`ALTER TABLE tickets ADD COLUMN area TEXT`); } catch(e) {}
   try { db.run(`ALTER TABLE tickets ADD COLUMN titulo TEXT`); } catch(e) {}
@@ -607,7 +252,53 @@ app.get('/api/reportes/ajustes', auth(), (req,res) => {
     activo INTEGER DEFAULT 1,
     creado TEXT DEFAULT(datetime('now','-6 hours'))
   )`);
+  // ── COMBOS / ARTÍCULOS INTEGRADOS ──
+  db.run(`CREATE TABLE IF NOT EXISTS combo_items(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    combo_id TEXT NOT NULL,
+    componente_id TEXT NOT NULL,
+    cantidad REAL NOT NULL DEFAULT 1,
+    FOREIGN KEY(combo_id) REFERENCES productos(id),
+    FOREIGN KEY(componente_id) REFERENCES productos(id)
+  )`);
+  // ── PRODUCCIÓN BÁSICA (Fabricación / Transformación / Ensamble) ──
+  db.run(`CREATE TABLE IF NOT EXISTS producciones(
+    id TEXT PRIMARY KEY,
+    numero TEXT NOT NULL,
+    tipo TEXT NOT NULL CHECK(tipo IN('fabricacion','transformacion','ensamble')),
+    sucursal_id TEXT NOT NULL,
+    usuario_id TEXT NOT NULL,
+    notas TEXT,
+    fecha TEXT DEFAULT(datetime('now','-6 hours'))
+  )`);
+  db.run(`CREATE TABLE IF NOT EXISTS produccion_items(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    produccion_id TEXT NOT NULL,
+    producto_id TEXT NOT NULL,
+    producto_nombre TEXT,
+    direccion TEXT NOT NULL CHECK(direccion IN('entrada','salida')),
+    cantidad REAL NOT NULL,
+    costo_unit REAL DEFAULT 0,
+    FOREIGN KEY(produccion_id) REFERENCES producciones(id),
+    FOREIGN KEY(producto_id) REFERENCES productos(id)
+  )`);
+  // ── AJUSTES DE INVENTARIO (consecutivo AJ-000001) ──
+  db.run(`CREATE TABLE IF NOT EXISTS ajustes_inventario(
+    id TEXT PRIMARY KEY,
+    numero TEXT NOT NULL,
+    producto_id TEXT NOT NULL,
+    producto_nombre TEXT,
+    sucursal_id TEXT NOT NULL,
+    tipo TEXT NOT NULL CHECK(tipo IN('entrada','salida','ajuste')),
+    cantidad REAL NOT NULL,
+    stock_anterior REAL DEFAULT 0,
+    stock_nuevo REAL DEFAULT 0,
+    motivo TEXT,
+    usuario_id TEXT,
+    fecha TEXT DEFAULT(datetime('now','-6 hours'))
+  )`);
   // Migración para BD existentes
+  try { db.run(`ALTER TABLE productos ADD COLUMN es_combo INTEGER DEFAULT 0`); } catch(e) {}
   try { db.run(`ALTER TABLE whatsapp_numeros ADD COLUMN callmebot_apikey TEXT`); } catch(e) {}
   try { db.run(`ALTER TABLE turnos ADD COLUMN turno_letra TEXT DEFAULT 'A'`); } catch(e) {}
   try { db.run(`ALTER TABLE turnos ADD COLUMN sobrante REAL DEFAULT 0`); } catch(e) {}
@@ -682,11 +373,13 @@ function ajustarStock(pid,sid,qty,tipo,ref,motivo,uid,costo=0,precio=0){
   return nuevo;
 }
 
+// ── HEALTH CHECK ──
+app.get('/api/health',(req,res)=>res.json({ok:true,app:'PetraPOS',version:'2.5'}));
+
 // ── AUTH ──
 app.post('/api/auth/login',(req,res)=>{
   const{username,password,sucursal_id}=req.body;
   if(!username||!password)return res.status(400).json({error:'Usuario y contraseña requeridos'});
-  // Licencia desactivada en Petra POS — acceso libre
   const u=get(`SELECT * FROM usuarios WHERE username=? AND activo=1`,[username]);
   if(!u||!bcrypt.compareSync(password,u.password))return res.status(401).json({error:'Usuario o contraseña incorrectos'});
   // Para admin: usar la sucursal seleccionada si existe, sino la primera sucursal activa
@@ -790,7 +483,7 @@ app.delete('/api/productos/:id',auth(['admin']),(req,res)=>{ run(`UPDATE product
 // ── INVENTARIO/KARDEX ──
 app.get('/api/inventario',auth(),(req,res)=>{
   const suc=req.query.sucursal_id||req.user.sucursal_id;
-  res.json(all(`SELECT p.id,p.codigo,p.nombre,p.categoria,p.precio_venta,p.costo,COALESCE(i.stock,0)as stock,COALESCE(i.stock_min,0)as stock_min FROM productos p LEFT JOIN inventario i ON i.producto_id=p.id AND i.sucursal_id=? WHERE p.activo=1 ORDER BY p.categoria,p.nombre`,[suc]));
+  res.json(all(`SELECT p.id,p.codigo,p.nombre,p.categoria,p.precio_venta,p.costo,COALESCE(i.stock,0)as stock,COALESCE(i.stock_min,0)as stock_min FROM productos p LEFT JOIN inventario i ON i.producto_id=p.id AND i.sucursal_id=? WHERE p.activo=1 AND COALESCE(p.es_combo,0)=0 ORDER BY p.categoria,p.nombre`,[suc]));
 });
 app.post('/api/inventario/ajuste',auth(['admin','supervisor']),(req,res)=>{
   const{producto_id,sucursal_id,tipo,cantidad,motivo,costo}=req.body;
@@ -804,6 +497,179 @@ app.put('/api/inventario/stock_min',auth(['admin','supervisor']),(req,res)=>{
 app.get('/api/kardex/:pid',auth(),(req,res)=>{
   const suc=req.query.sucursal_id||req.user.sucursal_id;
   res.json(all(`SELECT k.*,u.nombre as usuario_nombre FROM kardex k LEFT JOIN usuarios u ON u.id=k.usuario_id WHERE k.producto_id=? AND k.sucursal_id=? ORDER BY k.fecha DESC LIMIT 200`,[req.params.pid,suc]));
+});
+
+// ── COMBOS / ARTÍCULOS INTEGRADOS ──
+app.get('/api/combos',auth(),(req,res)=>{
+  const combos=all(`SELECT * FROM productos WHERE es_combo=1 AND activo=1 ORDER BY nombre`);
+  const items=all(`SELECT ci.*,p.codigo as componente_codigo,p.nombre as componente_nombre,p.precio_venta as componente_precio FROM combo_items ci JOIN productos p ON p.id=ci.componente_id WHERE ci.combo_id IN (${combos.map(()=>'?').join(',')||"''"})`,combos.map(c=>c.id));
+  res.json(combos.map(c=>({...c,items:items.filter(i=>i.combo_id===c.id)})));
+});
+app.get('/api/combos/:id/items',auth(),(req,res)=>{
+  res.json(all(`SELECT ci.*,p.codigo as componente_codigo,p.nombre as componente_nombre,p.precio_venta as componente_precio,p.costo as componente_costo FROM combo_items ci JOIN productos p ON p.id=ci.componente_id WHERE ci.combo_id=?`,[req.params.id]));
+});
+app.post('/api/combos',auth(['admin','supervisor']),(req,res)=>{
+  const{codigo,nombre,categoria,precio_venta,gravado,items}=req.body;
+  if(!codigo||!nombre)return res.status(400).json({error:'Código y nombre requeridos'});
+  if(!Array.isArray(items)||items.length<2)return res.status(400).json({error:'Un combo requiere al menos 2 artículos componentes'});
+  if(get(`SELECT id FROM productos WHERE codigo=?`,[codigo]))return res.status(400).json({error:'Código ya existe'});
+  const costoTotal=items.reduce((s,it)=>{
+    const p=get(`SELECT costo FROM productos WHERE id=?`,[it.producto_id]);
+    return s+((p?.costo||0)*(parseFloat(it.cantidad)||0));
+  },0);
+  const id=uuid();
+  db.run(`INSERT INTO productos(id,codigo,nombre,categoria,precio_venta,costo,gravado,es_combo)VALUES(?,?,?,?,?,?,?,1)`,
+    [id,codigo,nombre,categoria||'Combos',parseFloat(precio_venta)||0,costoTotal,gravado!==false?1:0]);
+  for(const it of items){
+    db.run(`INSERT INTO combo_items(combo_id,componente_id,cantidad)VALUES(?,?,?)`,[id,it.producto_id,parseFloat(it.cantidad)||1]);
+  }
+  saveDB(); res.json({id});
+});
+app.put('/api/combos/:id',auth(['admin','supervisor']),(req,res)=>{
+  const{nombre,categoria,precio_venta,gravado,activo,items}=req.body;
+  run(`UPDATE productos SET nombre=?,categoria=?,precio_venta=?,gravado=?,activo=? WHERE id=? AND es_combo=1`,
+    [nombre,categoria,parseFloat(precio_venta)||0,gravado!==false?1:0,activo!==false?1:0,req.params.id]);
+  if(Array.isArray(items)){
+    run(`DELETE FROM combo_items WHERE combo_id=?`,[req.params.id]);
+    let costoTotal=0;
+    for(const it of items){
+      const p=get(`SELECT costo FROM productos WHERE id=?`,[it.producto_id]);
+      costoTotal+=(p?.costo||0)*(parseFloat(it.cantidad)||0);
+      db.run(`INSERT INTO combo_items(combo_id,componente_id,cantidad)VALUES(?,?,?)`,[req.params.id,it.producto_id,parseFloat(it.cantidad)||1]);
+    }
+    run(`UPDATE productos SET costo=? WHERE id=?`,[costoTotal,req.params.id]);
+  }
+  saveDB(); res.json({ok:1});
+});
+app.delete('/api/combos/:id',auth(['admin']),(req,res)=>{
+  run(`UPDATE productos SET activo=0 WHERE id=? AND es_combo=1`,[req.params.id]); saveDB(); res.json({ok:1});
+});
+// Expande un renglón de venta: si el producto es combo, retorna sus componentes multiplicados por la cantidad vendida
+function expandirComboParaStock(producto_id,cantidadVendida){
+  const prod=get(`SELECT * FROM productos WHERE id=?`,[producto_id]);
+  if(!prod||!prod.es_combo)return[{producto_id,cantidad:cantidadVendida,costo:prod?.costo||0}];
+  const comps=all(`SELECT ci.componente_id,ci.cantidad,p.costo FROM combo_items ci JOIN productos p ON p.id=ci.componente_id WHERE ci.combo_id=?`,[producto_id]);
+  return comps.map(c=>({producto_id:c.componente_id,cantidad:c.cantidad*cantidadVendida,costo:c.costo||0}));
+}
+
+// ── PRODUCCIÓN BÁSICA (Fabricación / Transformación / Ensamble) ──
+app.get('/api/produccion',auth(),(req,res)=>{
+  const suc=req.query.sucursal_id||req.user.sucursal_id;
+  const{fecha_ini,fecha_fin,tipo}=req.query;
+  let sql=`SELECT pr.*,u.nombre as usuario_nombre FROM producciones pr LEFT JOIN usuarios u ON u.id=pr.usuario_id WHERE pr.sucursal_id=?`;
+  const params=[suc];
+  if(fecha_ini){sql+=` AND date(pr.fecha)>=?`;params.push(fecha_ini);}
+  if(fecha_fin){sql+=` AND date(pr.fecha)<=?`;params.push(fecha_fin);}
+  if(tipo){sql+=` AND pr.tipo=?`;params.push(tipo);}
+  sql+=` ORDER BY pr.fecha DESC LIMIT 300`;
+  res.json(all(sql,params));
+});
+app.get('/api/produccion/:id/items',auth(),(req,res)=>res.json(all(`SELECT * FROM produccion_items WHERE produccion_id=? ORDER BY direccion DESC`,[req.params.id])));
+app.post('/api/produccion',auth(['admin','supervisor']),(req,res)=>{
+  const{tipo,entradas,salidas,notas}=req.body;
+  if(!['fabricacion','transformacion','ensamble'].includes(tipo))return res.status(400).json({error:'Tipo de producción inválido'});
+  if(!Array.isArray(entradas)||!entradas.length)return res.status(400).json({error:'Debe indicar al menos una materia prima de entrada'});
+  if(!Array.isArray(salidas)||!salidas.length)return res.status(400).json({error:'Debe indicar al menos un producto terminado de salida'});
+  const suc=req.user.sucursal_id;
+  // Validar stock disponible de insumos antes de procesar
+  for(const e of entradas){
+    const inv=get(`SELECT stock FROM inventario WHERE producto_id=? AND sucursal_id=?`,[e.producto_id,suc]);
+    if((inv?.stock||0) < parseFloat(e.cantidad||0)) return res.status(400).json({error:'Stock insuficiente para procesar la materia prima seleccionada'});
+  }
+  const last=get(`SELECT numero FROM producciones ORDER BY fecha DESC LIMIT 1`);
+  let next=1;
+  if(last&&last.numero){const n=parseInt(last.numero.split('-')[1]);if(!isNaN(n))next=n+1;}
+  const numero=`PR-${String(next).padStart(6,'0')}`;
+  const id=uuid();
+  db.run(`INSERT INTO producciones(id,numero,tipo,sucursal_id,usuario_id,notas)VALUES(?,?,?,?,?,?)`,[id,numero,tipo,suc,req.user.id,notas||'']);
+  // Entradas = materias primas que SALEN del inventario (se consumen)
+  for(const e of entradas){
+    const p=get(`SELECT nombre,costo FROM productos WHERE id=?`,[e.producto_id]);
+    const cant=parseFloat(e.cantidad)||0;
+    const costoU=p?.costo||0;
+    db.run(`INSERT INTO produccion_items(produccion_id,producto_id,producto_nombre,direccion,cantidad,costo_unit)VALUES(?,?,?,?,?,?)`,[id,e.producto_id,p?.nombre||'','entrada',cant,costoU]);
+    ajustarStock(e.producto_id,suc,cant,'salida',numero,`Producción ${tipo} — insumo`,req.user.id,costoU,0);
+  }
+  // Salidas = productos terminados que ENTRAN al inventario (se generan)
+  for(const s of salidas){
+    const p=get(`SELECT nombre,costo FROM productos WHERE id=?`,[s.producto_id]);
+    const cant=parseFloat(s.cantidad)||0;
+    const costoU=s.costo!==undefined?parseFloat(s.costo)||0:(p?.costo||0);
+    db.run(`INSERT INTO produccion_items(produccion_id,producto_id,producto_nombre,direccion,cantidad,costo_unit)VALUES(?,?,?,?,?,?)`,[id,s.producto_id,p?.nombre||'','salida',cant,costoU]);
+    ajustarStock(s.producto_id,suc,cant,'entrada',numero,`Producción ${tipo} — producto terminado`,req.user.id,costoU,0);
+  }
+  saveDB();
+  res.json({id,numero});
+});
+
+// ── AJUSTES DE INVENTARIO (formal, con consecutivo) ──
+app.get('/api/ajustes-inventario',auth(),(req,res)=>{
+  const suc=req.query.sucursal_id||req.user.sucursal_id;
+  const{fecha_ini,fecha_fin,producto_id}=req.query;
+  let sql=`SELECT a.*,u.nombre as usuario_nombre,p.codigo as producto_codigo FROM ajustes_inventario a LEFT JOIN usuarios u ON u.id=a.usuario_id LEFT JOIN productos p ON p.id=a.producto_id WHERE a.sucursal_id=?`;
+  const params=[suc];
+  if(fecha_ini){sql+=` AND date(a.fecha)>=?`;params.push(fecha_ini);}
+  if(fecha_fin){sql+=` AND date(a.fecha)<=?`;params.push(fecha_fin);}
+  if(producto_id){sql+=` AND a.producto_id=?`;params.push(producto_id);}
+  sql+=` ORDER BY a.fecha DESC LIMIT 500`;
+  res.json(all(sql,params));
+});
+app.post('/api/ajustes-inventario',auth(['admin','supervisor']),(req,res)=>{
+  const{producto_id,tipo,cantidad,motivo,costo}=req.body;
+  if(!producto_id||!tipo||!cantidad)return res.status(400).json({error:'Producto, tipo y cantidad son requeridos'});
+  if(!['entrada','salida','ajuste'].includes(tipo))return res.status(400).json({error:'Tipo inválido'});
+  const suc=req.user.sucursal_id;
+  const prod=get(`SELECT nombre,costo FROM productos WHERE id=?`,[producto_id]);
+  const inv=get(`SELECT stock FROM inventario WHERE producto_id=? AND sucursal_id=?`,[producto_id,suc]);
+  const stockAnterior=inv?inv.stock:0;
+  let cant=parseFloat(cantidad)||0;
+  let tipoKardex=tipo;
+  let stockNuevo;
+  if(tipo==='ajuste'){
+    // Ajuste directo: "cantidad" es el nuevo stock deseado
+    stockNuevo=cant;
+    const diff=stockNuevo-stockAnterior;
+    tipoKardex=diff>=0?'entrada':'salida';
+    cant=Math.abs(diff);
+    ajustarStock(producto_id,suc,cant,tipoKardex,'AJ-DIRECTO',motivo||'Ajuste directo de stock',req.user.id,costo||prod?.costo||0);
+  } else {
+    stockNuevo=ajustarStock(producto_id,suc,cant,tipo,'AJUSTE-INV',motivo||'',req.user.id,costo||prod?.costo||0);
+  }
+  const last=get(`SELECT numero FROM ajustes_inventario ORDER BY fecha DESC LIMIT 1`);
+  let next=1;
+  if(last&&last.numero){const n=parseInt(last.numero.split('-')[1]);if(!isNaN(n))next=n+1;}
+  const numero=`AJ-${String(next).padStart(6,'0')}`;
+  const id=uuid();
+  db.run(`INSERT INTO ajustes_inventario(id,numero,producto_id,producto_nombre,sucursal_id,tipo,cantidad,stock_anterior,stock_nuevo,motivo,usuario_id)VALUES(?,?,?,?,?,?,?,?,?,?,?)`,
+    [id,numero,producto_id,prod?.nombre||'',suc,tipo,cant,stockAnterior,stockNuevo,motivo||'',req.user.id]);
+  saveDB();
+  res.json({id,numero,stock_anterior:stockAnterior,stock_nuevo:stockNuevo});
+});
+
+// ── REPORTE DE KARDEX (todos los productos, con filtros) ──
+app.get('/api/reportes/kardex',auth(),(req,res)=>{
+  const suc=req.query.sucursal_id||req.user.sucursal_id;
+  const{producto_id,fecha_ini,fecha_fin}=req.query;
+  let sql=`SELECT k.*,p.codigo as producto_codigo,p.nombre as producto_nombre,p.categoria as producto_categoria,u.nombre as usuario_nombre FROM kardex k JOIN productos p ON p.id=k.producto_id LEFT JOIN usuarios u ON u.id=k.usuario_id WHERE k.sucursal_id=?`;
+  const params=[suc];
+  if(producto_id){sql+=` AND k.producto_id=?`;params.push(producto_id);}
+  if(fecha_ini){sql+=` AND date(k.fecha)>=?`;params.push(fecha_ini);}
+  if(fecha_fin){sql+=` AND date(k.fecha)<=?`;params.push(fecha_fin);}
+  sql+=` ORDER BY p.nombre,k.fecha ASC LIMIT 3000`;
+  res.json(all(sql,params));
+});
+
+// ── REPORTE DE AJUSTES DE INVENTARIO ──
+app.get('/api/reportes/ajustes',auth(),(req,res)=>{
+  const suc=req.query.sucursal_id||req.user.sucursal_id;
+  const{fecha_ini,fecha_fin,producto_id}=req.query;
+  let sql=`SELECT a.*,u.nombre as usuario_nombre,p.codigo as producto_codigo,p.categoria as producto_categoria FROM ajustes_inventario a LEFT JOIN usuarios u ON u.id=a.usuario_id LEFT JOIN productos p ON p.id=a.producto_id WHERE a.sucursal_id=?`;
+  const params=[suc];
+  if(fecha_ini){sql+=` AND date(a.fecha)>=?`;params.push(fecha_ini);}
+  if(fecha_fin){sql+=` AND date(a.fecha)<=?`;params.push(fecha_fin);}
+  if(producto_id){sql+=` AND a.producto_id=?`;params.push(producto_id);}
+  sql+=` ORDER BY a.fecha DESC LIMIT 1000`;
+  res.json(all(sql,params));
 });
 
 // ── CLIENTES ──
@@ -933,9 +799,16 @@ app.post('/api/ventas',auth(),(req,res)=>{
   const id=uuid();
   db.run(`INSERT INTO ventas(id,numero_factura,sucursal_id,cliente_id,usuario_id,subtotal,descuento,importe_gravado,importe_exento,importe_exonerado,isv15,isv18,total,exonerado,orden_compra_exenta,constancia_registro,identificativo_sag,forma_pago,monto_recibido,cambio,turno_id,serie_id)VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,[id,numero_factura,suc,cliente_id,req.user.id,subtotal,descuento||0,importe_gravado||0,importe_exento||0,importe_exonerado||0,isv15||0,isv18||0,total,exonerado?1:0,orden_compra_exenta||'',constancia_registro||'',identificativo_sag||'',forma_pago||'efectivo',monto_recibido||0,cambio||0,turno_id||null,serie_id||null]);
   for(const item of items){
-    const prod=get(`SELECT costo FROM productos WHERE id=?`,[item.id]);
+    const prod=get(`SELECT costo,es_combo FROM productos WHERE id=?`,[item.id]);
     db.run(`INSERT INTO venta_items(venta_id,producto_id,producto_codigo,producto_nombre,producto_categoria,cantidad,precio_unit,costo_unit,subtotal)VALUES(?,?,?,?,?,?,?,?,?)`,[id,item.id,item.codigo,item.nombre,item.categoria||'',item.cantidad,item.precio,prod?.costo||0,item.cantidad*item.precio]);
-    ajustarStock(item.id,suc,item.cantidad,'venta',numero_factura,'Venta POS',req.user.id,prod?.costo||0,item.precio);
+    if(prod&&prod.es_combo){
+      // Combo: descontar stock de cada componente, no del combo en sí
+      expandirComboParaStock(item.id,item.cantidad).forEach(c=>{
+        ajustarStock(c.producto_id,suc,c.cantidad,'venta',numero_factura,`Venta POS — combo ${item.nombre}`,req.user.id,c.costo,0);
+      });
+    } else {
+      ajustarStock(item.id,suc,item.cantidad,'venta',numero_factura,'Venta POS',req.user.id,prod?.costo||0,item.precio);
+    }
   }
   // Si la venta es a crédito, crear CxC automáticamente
   if ((forma_pago||'efectivo') === 'credito' && cliente_id) {
@@ -966,7 +839,16 @@ app.post('/api/ventas/:id/anular',auth(['admin','supervisor']),(req,res)=>{
   const v=get(`SELECT * FROM ventas WHERE id=?`,[req.params.id]);
   if(!v)return res.status(404).json({error:'No encontrada'});
   if(v.estado==='anulada')return res.status(400).json({error:'Ya anulada'});
-  all(`SELECT * FROM venta_items WHERE venta_id=?`,[req.params.id]).forEach(i=>ajustarStock(i.producto_id,v.sucursal_id,i.cantidad,'entrada',`ANULACION-${v.numero_factura}`,'Anulación',req.user.id,i.costo_unit,i.precio_unit));
+  all(`SELECT * FROM venta_items WHERE venta_id=?`,[req.params.id]).forEach(i=>{
+    const prod=get(`SELECT es_combo FROM productos WHERE id=?`,[i.producto_id]);
+    if(prod&&prod.es_combo){
+      expandirComboParaStock(i.producto_id,i.cantidad).forEach(c=>{
+        ajustarStock(c.producto_id,v.sucursal_id,c.cantidad,'entrada',`ANULACION-${v.numero_factura}`,`Anulación — combo ${i.producto_nombre}`,req.user.id,c.costo,0);
+      });
+    } else {
+      ajustarStock(i.producto_id,v.sucursal_id,i.cantidad,'entrada',`ANULACION-${v.numero_factura}`,'Anulación',req.user.id,i.costo_unit,i.precio_unit);
+    }
+  });
   run(`UPDATE ventas SET estado='anulada' WHERE id=?`,[req.params.id]); saveDB(); res.json({ok:1});
 });
 
@@ -1164,7 +1046,7 @@ app.get('/api/reportes/articulos_por_dia',auth(),(req,res)=>{
 });
 app.get('/api/reportes/inventario',auth(),(req,res)=>{
   const suc=req.query.sucursal_id||req.user.sucursal_id;
-  res.json(all(`SELECT p.codigo,p.nombre,p.categoria,p.precio_venta,p.costo,COALESCE(i.stock,0)as stock,COALESCE(i.stock_min,0)as stock_min,COALESCE(i.stock,0)*p.costo as valor_costo,COALESCE(i.stock,0)*p.precio_venta as valor_venta FROM productos p LEFT JOIN inventario i ON i.producto_id=p.id AND i.sucursal_id=? WHERE p.activo=1 ORDER BY p.categoria,p.nombre`,[suc]));
+  res.json(all(`SELECT p.codigo,p.nombre,p.categoria,p.precio_venta,p.costo,COALESCE(i.stock,0)as stock,COALESCE(i.stock_min,0)as stock_min,COALESCE(i.stock,0)*p.costo as valor_costo,COALESCE(i.stock,0)*p.precio_venta as valor_venta FROM productos p LEFT JOIN inventario i ON i.producto_id=p.id AND i.sucursal_id=? WHERE p.activo=1 AND COALESCE(p.es_combo,0)=0 ORDER BY p.categoria,p.nombre`,[suc]));
 });
 
 // ── DASHBOARD ──
@@ -1702,7 +1584,7 @@ app.put('/api/tickets/:id/estado', auth(['admin','supervisor']), async (req, res
             doc.moveTo(50,doc.y).lineTo(545,doc.y).strokeColor('#1e3a5f').lineWidth(2).stroke();
             doc.moveDown(0.5);
             doc.fontSize(9).fillColor('#94a3b8').font('Helvetica')
-               .text(`PetraPOS v7.3 — Ticket resuelto el ${ahora}`, { align: 'center' });
+               .text(`PetraPOS v2.5 — Ticket resuelto el ${ahora}`, { align: 'center' });
 
             doc.end();
           });
@@ -2019,7 +1901,7 @@ app.get('/api/reportes/valorizacion',auth(),(req,res)=>{
     COALESCE(i.stock,0)*p.precio_venta as valor_venta,
     (COALESCE(i.stock,0)*p.precio_venta)-(COALESCE(i.stock,0)*p.costo) as margen
     FROM productos p LEFT JOIN inventario i ON i.producto_id=p.id AND i.sucursal_id=?
-    WHERE p.activo=1 ORDER BY p.categoria,p.nombre`,[suc]));
+    WHERE p.activo=1 AND COALESCE(p.es_combo,0)=0 ORDER BY p.categoria,p.nombre`,[suc]));
 });
 
 // ── REPORTE CORTE CAJA CON HORA ──
@@ -2050,7 +1932,7 @@ initDB().then(()=>{
     const url = process.env.RAILWAY_PUBLIC_DOMAIN
       ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
       : process.env.SERVER_URL || `http://localhost:${PORT}`;
-    console.log(`\n🚀 PetraPOS v7.3 [${env.toUpperCase()}]`);
+    console.log(`\n🚀 PetraPOS v2.5 [${env.toUpperCase()}]`);
     console.log(`   URL:    ${url}`);
     console.log(`   Puerto: ${PORT}`);
     console.log(`   BD:     ${DB_FILE}`);

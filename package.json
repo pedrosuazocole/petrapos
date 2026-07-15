@@ -1,11 +1,19 @@
 {
-  "name": "petra-pos",
-  "version": "1.0.0",
-  "description": "Petra POS — Sistema de Punto de Venta Honduras",
+  "name": "petrapos-buenosaires",
+  "version": "2.5.0",
+  "description": "Petra POS v2.5 — Inversiones Buenos Aires",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "pm2": "pm2 start server.js --name petrapos-buenosaires",
+    "pm2:stop": "pm2 stop petrapos-buenosaires",
+    "pm2:restart": "pm2 restart petrapos-buenosaires",
+    "pm2:logs": "pm2 logs petrapos-buenosaires",
+    "docker:build": "docker build -t petrapos-buenosaires .",
+    "docker:run": "docker compose up -d",
+    "docker:stop": "docker compose down",
+    "docker:logs": "docker compose logs -f"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -17,7 +25,10 @@
     "sql.js": "^1.12.0",
     "uuid": "^10.0.0"
   },
-  "engines": { "node": ">=18.0.0" },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["pos", "facturacion", "honduras", "sar", "inventario", "kardex"],
   "author": "Petra POS Honduras",
   "license": "UNLICENSED"
 }

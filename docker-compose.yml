@@ -22,7 +22,7 @@ services:
     volumes:
       - petrapos_data:/datos/petrapos   # BD persistente
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/licencia/estado"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3

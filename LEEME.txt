@@ -1,5 +1,5 @@
 ============================================================
-  METRIC POS v7.3 — Inversiones Buenos Aires
+  PETRA POS v2.5 — Inversiones Buenos Aires
   Instalación y uso LOCAL (Windows)
 ============================================================
 

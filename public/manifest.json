@@ -1,16 +1,27 @@
 {
-  "name": "Petra POS",
+  "name": "PetraPOS Buenos Aires",
   "short_name": "PetraPOS",
-  "description": "Sistema de Punto de Venta — Petra POS",
+  "description": "Sistema de Punto de Venta — Inversiones Buenos Aires",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1E1B4B",
-  "theme_color": "#4F46E5",
+  "background_color": "#1e3a5f",
+  "theme_color": "#1e3a5f",
   "orientation": "any",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ],
-  "categories": ["business","finance","productivity"],
-  "lang": "es", "dir": "ltr"
+  "categories": ["business", "finance", "productivity"],
+  "lang": "es",
+  "dir": "ltr"
 }

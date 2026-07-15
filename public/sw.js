@@ -1,5 +1,5 @@
-// MetricPOS Service Worker — v7.3
-const CACHE = 'metricpos-v7.3';
+// PetraPOS Service Worker — v2.5
+const CACHE = 'petrapos-v2.5';
 const ASSETS = ['/', '/styles.css', '/app.js'];
 
 self.addEventListener('install', e => {

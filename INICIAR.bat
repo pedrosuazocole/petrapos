@@ -4,7 +4,7 @@ color 0A
 
 echo.
 echo  ============================================
-echo   METRIC POS v7.3 - Inversiones Buenos Aires
+echo   PETRA POS v2.5 - Inversiones Buenos Aires
 echo  ============================================
 echo.
 

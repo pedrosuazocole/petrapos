@@ -8,6 +8,6 @@ restartPolicyMaxRetries = 3
 
 [[deploy.healthChecks]]
 type = "http"
-path = "/api/licencia/estado"
+path = "/api/health"
 interval = 30
 timeout = 10
